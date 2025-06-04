@@ -1,7 +1,6 @@
-# src/ui/components/common_widgets.py
+# src/ui/components/common_widgets.py - VERSION CORRIGÉE AVEC FILTRES
 """
-Composants UI réutilisables pour l'application Toolbox
-Centralise les widgets communs et leur styling
+Composants UI réutilisables - Version avec filtres fonctionnels
 """
 
 from PyQt6.QtWidgets import (
@@ -12,8 +11,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QTextCharFormat, QColor
 import time
-
-from ...core.logger import log_info, log_debug
 
 
 class VersionLabel(QLabel):
@@ -39,7 +36,7 @@ class ConnectionStatusWidget(QWidget):
         self.status_label = QLabel("❌ Non connecté")
         self.status_label.setFixedWidth(120)
         
-        self.info_label = QLabel("")  # 🔧 Initialiser AVANT d'appeler update_status
+        self.info_label = QLabel("")
         self.info_label.setStyleSheet("color: #495057; font-size: 12px; margin-left: 10px;")
         
         layout.addWidget(self.status_label)
@@ -47,12 +44,9 @@ class ConnectionStatusWidget(QWidget):
         layout.addStretch()
         
         self.setLayout(layout)
-        
-        # 🔧 Maintenant on peut appeler update_status en toute sécurité
         self.update_status(False)
     
     def update_status(self, connected, info_text=""):
-        """Met à jour le statut de connexion"""
         if connected:
             self.status_label.setText("✅ Connecté")
             self.status_label.setStyleSheet("""
@@ -81,231 +75,118 @@ class ConnectionStatusWidget(QWidget):
         self.info_label.setText(info_text)
 
 
-class ActionButton(QPushButton):
-    """Bouton d'action stylisé avec couleurs par catégorie"""
-    
-    COLORS = {
-        'primary': '#007bff',
-        'success': '#28a745',
-        'info': '#17a2b8',
-        'warning': '#ffc107',
-        'danger': '#dc3545',
-        'secondary': '#6c757d',
-        'purple': '#6f42c1',
-        'orange': '#fd7e14',
-        'pink': '#e83e8c'
-    }
-    
-    def __init__(self, text, color='primary', icon=""):
-        super().__init__(f"{icon} {text}" if icon else text)
-        self.color = color
-        self.apply_style()
-    
-    def apply_style(self):
-        """Applique le style selon la couleur"""
-        base_color = self.COLORS.get(self.color, self.COLORS['primary'])
-        hover_color = self._darken_color(base_color)
-        
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {base_color};
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 5px;
-                font-weight: bold;
-                text-align: left;
-                font-size: 13px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover_color};
-            }}
-            QPushButton:disabled {{
-                background-color: #6c757d;
-            }}
-        """)
-    
-    def _darken_color(self, hex_color):
-        """Assombrit une couleur hexadécimale"""
-        hex_color = hex_color.lstrip('#')
-        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        darkened = tuple(max(0, int(c * 0.8)) for c in rgb)
-        return f"#{''.join(f'{c:02x}' for c in darkened)}"
-
-
-class LogDisplay(QTextEdit):
-    """Zone d'affichage des logs avec coloration automatique"""
-    
-    def __init__(self, title="Logs"):
-        super().__init__()
-        self.title = title
-        self.all_logs = []
-        self.log_filters = {
-            'DEBUG': False,
-            'INFO': True,
-            'WARNING': True,
-            'ERROR': True,
-            'SUCCESS': True
-        }
-        
-        self.init_ui()
-        self.add_welcome_message()
-    
-    def init_ui(self):
-        """Initialise l'apparence"""
-        self.setReadOnly(True)
-        self.setFont(QFont("Consolas", 10))
-        self.setStyleSheet("""
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #e0e0e0;
-                border: 1px solid #555;
-                border-radius: 6px;
-                padding: 15px;
-                line-height: 1.4;
-                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            }
-        """)
-    
-    def add_welcome_message(self):
-        """Ajoute le message de bienvenue"""
-        cursor = self.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        
-        # En-tête
-        format_header = QTextCharFormat()
-        format_header.setForeground(QColor("#74c0fc"))
-        format_header.setFontWeight(QFont.Weight.Bold)
-        cursor.setCharFormat(format_header)
-        cursor.insertText("=" * 80 + "\n")
-        cursor.insertText(f"                        {self.title.upper()} - SESSION STARTED\n")
-        cursor.insertText("=" * 80 + "\n\n")
-        
-        # Messages système
-        format_system = QTextCharFormat()
-        format_system.setForeground(QColor("#51cf66"))
-        cursor.setCharFormat(format_system)
-        cursor.insertText(f"SYSTEM: Welcome to {self.title}\n")
-        cursor.insertText("SYSTEM: Real-time logging with color coding\n")
-        cursor.insertText("SYSTEM: Use filters to control display\n\n")
-    
-    def add_log(self, message, level="INFO"):
-        """Ajoute un log coloré"""
-        # Sauvegarder dans la liste complète
-        self.all_logs.append((message, level))
-        
-        # Vérifier les filtres
-        if not self.log_filters.get(level, True):
-            return
-        
-        cursor = self.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        
-        format = QTextCharFormat()
-        
-        if level == "SUCCESS":
-            format.setForeground(QColor("#51cf66"))
-            format.setFontWeight(QFont.Weight.Bold)
-        elif level == "ERROR":
-            format.setForeground(QColor("#ff6b6b"))
-            format.setFontWeight(QFont.Weight.Bold)
-        elif level == "WARNING":
-            format.setForeground(QColor("#ffd43b"))
-        elif level == "DEBUG":
-            format.setForeground(QColor("#868e96"))
-        else:  # INFO
-            format.setForeground(QColor("#74c0fc"))
-        
-        cursor.setCharFormat(format)
-        timestamp = time.strftime("%H:%M:%S")
-        cursor.insertText(f"[{timestamp}] {level} | {message}\n")
-        
-        # Auto-scroll
-        scrollbar = self.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
-    
-    def update_filter(self, level, enabled):
-        """Met à jour un filtre et rafraîchit l'affichage"""
-        self.log_filters[level] = enabled
-        self.refresh_display()
-    
-    def refresh_display(self):
-        """Rafraîchit l'affichage selon les filtres"""
-        # Sauvegarder la position de scroll
-        scrollbar = self.verticalScrollBar()
-        was_at_bottom = scrollbar.value() == scrollbar.maximum()
-        
-        # Vider et réafficher
-        self.clear()
-        self.add_welcome_message()
-        
-        for message, level in self.all_logs:
-            if self.log_filters.get(level, True):
-                self.add_log(message, level)
-        
-        # Restaurer le scroll
-        if was_at_bottom:
-            scrollbar.setValue(scrollbar.maximum())
-    
-    def clear_logs(self):
-        """Efface tous les logs"""
-        self.clear()
-        self.all_logs = []
-        self.add_welcome_message()
-        
-        # Message de nettoyage
-        cursor = self.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        format = QTextCharFormat()
-        format.setForeground(QColor("#ffd43b"))
-        cursor.setCharFormat(format)
-        timestamp = time.strftime("%H:%M:%S")
-        cursor.insertText(f"[{timestamp}] SYSTEM | Logs cleared by user\n\n")
-
-
 class LogControlPanel(QWidget):
-    """Panneau de contrôle pour les logs (filtres + boutons)"""
+    """Panneau de contrôle pour les logs avec filtres fonctionnels"""
     
-    filter_changed = pyqtSignal(str, bool)  # level, enabled
     export_requested = pyqtSignal()
     clear_requested = pyqtSignal()
+    filter_changed = pyqtSignal(str, bool)  # level, enabled
     
     def __init__(self):
         super().__init__()
+        self.filters = {
+            'DEBUG': True,
+            'INFO': True,
+            'SUCCESS': True,
+            'WARNING': True,
+            'ERROR': True
+        }
         self.init_ui()
     
     def init_ui(self):
         layout = QHBoxLayout()
         layout.setContentsMargins(5, 2, 5, 2)
         
-        # Filtres
-        filters_group = QGroupBox("Filtres")
-        filters_layout = QHBoxLayout()
-        filters_layout.setContentsMargins(5, 2, 5, 2)
+        # === SECTION FILTRES ===
+        filters_group = QFrame()
+        filters_group.setFrameStyle(QFrame.Shape.StyledPanel)
+        filters_group.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 2px;
+            }
+        """)
         
-        # Checkboxes de filtres
+        filters_layout = QHBoxLayout()
+        filters_layout.setContentsMargins(8, 4, 8, 4)
+        filters_layout.setSpacing(8)
+        
+        filters_label = QLabel("Filtres:")
+        filters_label.setStyleSheet("font-weight: bold; font-size: 11px; color: #495057;")
+        filters_layout.addWidget(filters_label)
+        
+        # Créer les checkboxes pour chaque niveau
+        self.filter_checkboxes = {}
+        
         filter_configs = [
-            ('DEBUG', False, '#868e96'),
-            ('INFO', True, '#74c0fc'),
-            ('WARNING', True, '#ffd43b'),
-            ('ERROR', True, '#ff6b6b'),
-            ('SUCCESS', True, '#51cf66')
+            ('DEBUG', '🐛', '#868e96'),
+            ('INFO', 'ℹ️', '#17a2b8'),
+            ('SUCCESS', '✅', '#28a745'),
+            ('WARNING', '⚠️', '#ffc107'),
+            ('ERROR', '❌', '#dc3545')
         ]
         
-        for level, checked, color in filter_configs:
-            checkbox = QCheckBox(level)
-            checkbox.setChecked(checked)
-            checkbox.setStyleSheet(f"color: {color}; font-size: 11px;")
-            checkbox.toggled.connect(lambda state, l=level: self.filter_changed.emit(l, state))
+        for level, icon, color in filter_configs:
+            checkbox = QCheckBox(f"{icon} {level}")
+            checkbox.setChecked(self.filters[level])
+            checkbox.setStyleSheet(f"""
+                QCheckBox {{
+                    font-size: 11px;
+                    font-weight: bold;
+                    color: {color};
+                    spacing: 2px;
+                }}
+                QCheckBox::indicator {{
+                    width: 14px;
+                    height: 14px;
+                }}
+                QCheckBox::indicator:checked {{
+                    background-color: {color};
+                    border: 1px solid {color};
+                    border-radius: 2px;
+                }}
+                QCheckBox::indicator:unchecked {{
+                    background-color: white;
+                    border: 1px solid #ccc;
+                    border-radius: 2px;
+                }}
+            """)
+            
+            # Connecter le signal avec une lambda qui capture la valeur de level
+            checkbox.stateChanged.connect(lambda state, lvl=level: self.on_filter_changed(lvl, state == 2))
+            
+            self.filter_checkboxes[level] = checkbox
             filters_layout.addWidget(checkbox)
         
         filters_group.setLayout(filters_layout)
-        filters_group.setMaximumHeight(50)
         layout.addWidget(filters_group)
         
         layout.addStretch()
         
-        # Boutons d'action
+        # === BOUTONS D'ACTION ===
+        # Bouton tout sélectionner/désélectionner
+        self.toggle_all_btn = QPushButton("🔄 Tout")
+        self.toggle_all_btn.setToolTip("Sélectionner/Désélectionner tous les filtres")
+        self.toggle_all_btn.clicked.connect(self.toggle_all_filters)
+        self.toggle_all_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                border: none;
+                padding: 6px 10px;
+                border-radius: 3px;
+                font-size: 11px;
+                margin-right: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        layout.addWidget(self.toggle_all_btn)
+        
+        # Bouton export
         self.export_btn = QPushButton("💾 Exporter")
         self.export_btn.clicked.connect(self.export_requested.emit)
         self.export_btn.setStyleSheet("""
@@ -324,6 +205,7 @@ class LogControlPanel(QWidget):
         """)
         layout.addWidget(self.export_btn)
         
+        # Bouton clear
         self.clear_btn = QPushButton("🗑️ Effacer")
         self.clear_btn.clicked.connect(self.clear_requested.emit)
         self.clear_btn.setStyleSheet("""
@@ -342,108 +224,255 @@ class LogControlPanel(QWidget):
         layout.addWidget(self.clear_btn)
         
         self.setLayout(layout)
-
-
-class StatusTable(QTableWidget):
-    """Tableau de statut stylisé"""
     
-    def __init__(self, headers):
+    def on_filter_changed(self, level, enabled):
+        """Gère le changement d'état d'un filtre"""
+        try:
+            self.filters[level] = enabled
+            print(f"Filtre {level} {'activé' if enabled else 'désactivé'}")
+            self.filter_changed.emit(level, enabled)
+        except Exception as e:
+            print(f"Erreur changement filtre {level}: {e}")
+    
+    def toggle_all_filters(self):
+        """Bascule tous les filtres"""
+        # Si tous sont cochés, tout décocher, sinon tout cocher
+        all_checked = all(self.filters.values())
+        new_state = not all_checked
+        
+        for level, checkbox in self.filter_checkboxes.items():
+            checkbox.setChecked(new_state)
+            # Le signal stateChanged sera automatiquement émis
+        
+        self.toggle_all_btn.setText("🔄 Tout" if new_state else "🔄 Aucun")
+    
+    def get_active_filters(self):
+        """Retourne la liste des filtres actifs"""
+        return [level for level, enabled in self.filters.items() if enabled]
+
+
+class LogDisplay(QTextEdit):
+    """Zone d'affichage des logs avec filtrage par niveau"""
+    
+    def __init__(self, title="Logs"):
         super().__init__()
-        self.setColumnCount(len(headers))
-        self.setHorizontalHeaderLabels(headers)
-        self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.setAlternatingRowColors(True)
-        
-        # Style du tableau
-        self.setStyleSheet("""
-            QTableWidget {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                gridline-color: #dee2e6;
-            }
-            QTableWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #dee2e6;
-            }
-            QTableWidget::item:selected {
-                background-color: #007bff;
-                color: white;
-            }
-            QHeaderView::section {
-                background-color: #e9ecef;
-                padding: 8px;
-                border: none;
-                border-bottom: 2px solid #dee2e6;
-                font-weight: bold;
-            }
-        """)
-        
-        # Auto-resize des colonnes
-        header = self.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        header.setStretchLastSection(True)
-    
-    def add_status_row(self, data, status_column=None, status_value=None):
-        """Ajoute une ligne avec coloration de statut"""
-        row = self.rowCount()
-        self.insertRow(row)
-        
-        for col, value in enumerate(data):
-            item = QTableWidgetItem(str(value))
-            
-            # Coloration selon le statut
-            if status_column is not None and col == status_column:
-                if "✅" in str(value) or "Connecté" in str(value) or "Actif" in str(value):
-                    item.setBackground(QColor("#d4edda"))
-                elif "❌" in str(value) or "Non connecté" in str(value) or "Inactif" in str(value):
-                    item.setBackground(QColor("#f8d7da"))
-                elif "⚠️" in str(value) or "Attention" in str(value):
-                    item.setBackground(QColor("#fff3cd"))
-            
-            self.setItem(row, col, item)
-
-
-class ProgressWidget(QWidget):
-    """Widget de progression avec message"""
-    
-    def __init__(self):
-        super().__init__()
+        self.title = title
+        self.all_logs = []  # Stockage de tous les logs: [(message, level, timestamp), ...]
+        self.active_filters = {'DEBUG', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'}  # Tous actifs par défaut
         self.init_ui()
+        self.add_welcome_message()
     
     def init_ui(self):
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        
-        self.status_label = QLabel("Prêt")
-        self.status_label.setStyleSheet("color: #6c757d; font-style: italic; padding: 4px;")
-        
-        layout.addWidget(self.progress_bar)
-        layout.addWidget(self.status_label)
-        
-        self.setLayout(layout)
+        self.setReadOnly(True)
+        self.setFont(QFont("Consolas", 10))
+        self.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 15px;
+                line-height: 1.4;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            }
+        """)
     
-    def start_progress(self, message="En cours..."):
-        """Démarre la progression indéterminée"""
-        self.progress_bar.setRange(0, 0)  # Mode indéterminé
-        self.progress_bar.setVisible(True)
-        self.status_label.setText(message)
+    def add_welcome_message(self):
+        """Ajoute le message d'accueil"""
+        cursor = self.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        
+        format_header = QTextCharFormat()
+        format_header.setForeground(QColor("#74c0fc"))
+        format_header.setFontWeight(QFont.Weight.Bold)
+        cursor.setCharFormat(format_header)
+        cursor.insertText("=" * 80 + "\n")
+        cursor.insertText(f"                        {self.title.upper()} - SESSION STARTED\n")
+        cursor.insertText("=" * 80 + "\n\n")
+        
+        format_system = QTextCharFormat()
+        format_system.setForeground(QColor("#51cf66"))
+        cursor.setCharFormat(format_system)
+        cursor.insertText(f"SYSTEM: Welcome to {self.title}\n")
+        cursor.insertText("SYSTEM: Filtres par niveau de criticité activés\n")
+        cursor.insertText("SYSTEM: Utilisez les checkboxes pour filtrer les logs\n\n")
     
-    def set_progress(self, value, maximum=100, message=""):
-        """Définit une progression déterminée"""
-        self.progress_bar.setRange(0, maximum)
-        self.progress_bar.setValue(value)
-        self.progress_bar.setVisible(True)
-        if message:
-            self.status_label.setText(message)
+    def add_log(self, message, level="INFO"):
+        """Ajoute un log et l'affiche si le filtre est actif"""
+        try:
+            timestamp = time.strftime("%H:%M:%S")
+            
+            # Stocker le log complet
+            self.all_logs.append((message, level, timestamp))
+            
+            # Afficher seulement si le niveau est dans les filtres actifs
+            if level in self.active_filters:
+                self._append_log_to_display(message, level, timestamp)
+            
+        except Exception as e:
+            print(f"Erreur ajout log: {e}")
     
-    def stop_progress(self, message="Terminé"):
-        """Arrête la progression"""
-        self.progress_bar.setVisible(False)
-        self.status_label.setText(message)
+    def _append_log_to_display(self, message, level, timestamp):
+        """Ajoute un log à l'affichage avec formatage"""
+        try:
+            cursor = self.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            
+            # Format selon le niveau
+            format = QTextCharFormat()
+            
+            if level == "SUCCESS":
+                format.setForeground(QColor("#51cf66"))
+                format.setFontWeight(QFont.Weight.Bold)
+            elif level == "ERROR":
+                format.setForeground(QColor("#ff6b6b"))
+                format.setFontWeight(QFont.Weight.Bold)
+            elif level == "WARNING":
+                format.setForeground(QColor("#ffd43b"))
+            elif level == "DEBUG":
+                format.setForeground(QColor("#868e96"))
+            else:  # INFO
+                format.setForeground(QColor("#74c0fc"))
+            
+            cursor.setCharFormat(format)
+            cursor.insertText(f"[{timestamp}] {level} | {message}\n")
+            
+            # Auto-scroll vers le bas
+            scrollbar = self.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+            
+        except Exception as e:
+            print(f"Erreur affichage log: {e}")
+    
+    def update_filter(self, level, enabled):
+        """Met à jour les filtres et rafraîchit l'affichage"""
+        try:
+            if enabled:
+                self.active_filters.add(level)
+            else:
+                self.active_filters.discard(level)
+            
+            # Rafraîchir l'affichage
+            self._refresh_display()
+            
+            print(f"Filtre {level} {'activé' if enabled else 'désactivé'}. Filtres actifs: {self.active_filters}")
+            
+        except Exception as e:
+            print(f"Erreur mise à jour filtre {level}: {e}")
+    
+    def _refresh_display(self):
+        """Rafraîchit l'affichage complet avec les filtres actuels"""
+        try:
+            # Sauvegarder la position du scroll
+            scrollbar = self.verticalScrollBar()
+            scroll_position = scrollbar.value()
+            was_at_bottom = scroll_position >= scrollbar.maximum() - 10
+            
+            # Effacer le contenu actuel
+            self.clear()
+            
+            # Remettre le message d'accueil
+            self.add_welcome_message()
+            
+            # Réafficher tous les logs filtrés
+            for message, level, timestamp in self.all_logs:
+                if level in self.active_filters:
+                    self._append_log_to_display(message, level, timestamp)
+            
+            # Restaurer la position du scroll (ou aller en bas si on y était)
+            if was_at_bottom:
+                scrollbar.setValue(scrollbar.maximum())
+            else:
+                scrollbar.setValue(min(scroll_position, scrollbar.maximum()))
+                
+        except Exception as e:
+            print(f"Erreur rafraîchissement affichage: {e}")
+    
+    def clear_logs(self):
+        """Efface tous les logs"""
+        try:
+            self.clear()
+            self.all_logs = []
+            self.add_welcome_message()
+            
+            # Message de nettoyage
+            cursor = self.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            format = QTextCharFormat()
+            format.setForeground(QColor("#ffd43b"))
+            cursor.setCharFormat(format)
+            timestamp = time.strftime("%H:%M:%S")
+            cursor.insertText(f"[{timestamp}] SYSTEM | Logs cleared by user\n\n")
+            
+        except Exception as e:
+            print(f"Erreur clear logs: {e}")
+    
+    def get_filtered_logs_text(self):
+        """Retourne le texte des logs actuellement affichés (filtrés)"""
+        try:
+            filtered_logs = []
+            for message, level, timestamp in self.all_logs:
+                if level in self.active_filters:
+                    filtered_logs.append(f"[{timestamp}] {level} | {message}")
+            return '\n'.join(filtered_logs)
+        except Exception as e:
+            print(f"Erreur récupération logs filtrés: {e}")
+            return ""
+    
+    def get_all_logs_text(self):
+        """Retourne le texte de tous les logs (non filtrés)"""
+        try:
+            all_logs_text = []
+            for message, level, timestamp in self.all_logs:
+                all_logs_text.append(f"[{timestamp}] {level} | {message}")
+            return '\n'.join(all_logs_text)
+        except Exception as e:
+            print(f"Erreur récupération tous les logs: {e}")
+            return ""
+
+
+class ActionButton(QPushButton):
+    """Bouton d'action stylisé avec couleurs par catégorie"""
+    
+    def __init__(self, text, color='primary', icon=""):
+        super().__init__(f"{icon} {text}" if icon else text)
+        self.color = color
+        self.apply_style()
+    
+    def apply_style(self):
+        """Applique le style selon la couleur"""
+        colors = {
+            'primary': '#007bff',
+            'success': '#28a745',
+            'info': '#17a2b8',
+            'warning': '#ffc107',
+            'danger': '#dc3545',
+            'secondary': '#6c757d',
+            'purple': '#6f42c1',
+            'orange': '#fd7e14',
+            'pink': '#e83e8c'
+        }
+        
+        base_color = colors.get(self.color, '#007bff')
+        
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {base_color};
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 5px;
+                font-weight: bold;
+                text-align: left;
+                font-size: 13px;
+            }}
+            QPushButton:hover {{
+                opacity: 0.8;
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+            }}
+        """)
 
 
 class SectionHeader(QWidget):
@@ -451,13 +480,9 @@ class SectionHeader(QWidget):
     
     def __init__(self, title, icon="", version_widget=None):
         super().__init__()
-        self.init_ui(title, icon, version_widget)
-    
-    def init_ui(self, title, icon, version_widget):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 10)
         
-        # Titre avec icône
         title_text = f"{icon} {title}" if icon else title
         title_label = QLabel(title_text)
         title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
@@ -465,7 +490,6 @@ class SectionHeader(QWidget):
         
         layout.addStretch()
         
-        # Widget de version (optionnel)
         if version_widget is None:
             version_widget = VersionLabel()
         layout.addWidget(version_widget)
@@ -479,9 +503,6 @@ class ConfigurationGroup(QGroupBox):
     def __init__(self, title, icon="🔗"):
         super().__init__(f"{icon} {title}")
         self.setMaximumHeight(80)
-        self.init_style()
-    
-    def init_style(self):
         self.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -535,7 +556,6 @@ class ActionGrid(QWidget):
                     widget.setEnabled(enabled)
 
 
-# Factory pour créer des widgets standardisés
 class WidgetFactory:
     """Factory pour créer des widgets standardisés"""
     
@@ -552,45 +572,8 @@ class WidgetFactory:
         label = QLabel(text)
         label.setStyleSheet("color: #495057; font-size: 12px; margin-left: 10px;")
         return label
-    
-    @staticmethod
-    def create_separator():
-        """Crée un séparateur horizontal"""
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-        line.setStyleSheet("color: #dee2e6;")
-        return line
-    
-    @staticmethod
-    def create_card(title, content_widget):
-        """Crée une carte avec titre et contenu"""
-        card = QFrame()
-        card.setFrameStyle(QFrame.Shape.Box)
-        card.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                padding: 16px;
-            }
-        """)
-        
-        layout = QVBoxLayout()
-        
-        # Titre de la carte
-        title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
-        layout.addWidget(title_label)
-        
-        # Contenu
-        layout.addWidget(content_widget)
-        
-        card.setLayout(layout)
-        return card
 
 
-# Composant pour l'affichage des métriques
 class MetricsDisplay(QWidget):
     """Affichage de métriques avec icônes et couleurs"""
     
@@ -654,6 +637,45 @@ class MetricsDisplay(QWidget):
         self.metrics.clear()
 
 
+class StatusTable(QTableWidget):
+    """Tableau de statut standardisé"""
+    
+    def __init__(self, headers):
+        super().__init__()
+        self.setColumnCount(len(headers))
+        self.setHorizontalHeaderLabels(headers)
+        
+        # Style du tableau
+        self.setStyleSheet("""
+            QTableWidget {
+                gridline-color: #dee2e6;
+                background-color: white;
+                alternate-background-color: #f8f9fa;
+            }
+            QHeaderView::section {
+                background-color: #e9ecef;
+                padding: 6px;
+                font-weight: bold;
+                border: 1px solid #dee2e6;
+            }
+        """)
+        
+        # Configuration
+        self.setAlternatingRowColors(True)
+        self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        header = self.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    
+    def add_status_row(self, data):
+        """Ajoute une ligne de données"""
+        row_position = self.rowCount()
+        self.insertRow(row_position)
+        
+        for column, value in enumerate(data):
+            item = QTableWidgetItem(str(value))
+            self.setItem(row_position, column, item)
+
+
 # Export des composants principaux
 __all__ = [
     'VersionLabel',
@@ -661,11 +683,10 @@ __all__ = [
     'ActionButton',
     'LogDisplay',
     'LogControlPanel',
-    'StatusTable',
-    'ProgressWidget',
     'SectionHeader',
     'ConfigurationGroup',
     'ActionGrid',
     'WidgetFactory',
-    'MetricsDisplay'
+    'MetricsDisplay',
+    'StatusTable'
 ]

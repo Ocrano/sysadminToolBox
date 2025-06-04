@@ -238,7 +238,14 @@ class MainWindowRefactored(QMainWindow):
         
         # Panneau de contrôle des logs
         self.log_controls = LogControlPanel()
-        self.log_controls.filter_changed.connect(self.on_log_filter_changed)
+        
+        # Connexion sécurisée des signaux
+        try:
+            if hasattr(self.log_controls, 'filter_changed'):
+                self.log_controls.filter_changed.connect(self.on_log_filter_changed)
+        except AttributeError:
+            print("Signal filter_changed non disponible - filtres désactivés")
+        
         self.log_controls.export_requested.connect(self.export_logs)
         self.log_controls.clear_requested.connect(self.clear_logs)
         header_layout.addWidget(self.log_controls)
@@ -348,11 +355,16 @@ class MainWindowRefactored(QMainWindow):
         self.tools_logs.add_log(message, level)
 
     def on_log_filter_changed(self, level, enabled):
-        """Réagit aux changements de filtres"""
-        self.tools_logs.update_filter(level, enabled)
+        """Réagit aux changements de filtres - VERSION CORRIGÉE"""
+        try:
+            if hasattr(self, 'tools_logs') and hasattr(self.tools_logs, 'update_filter'):
+                self.tools_logs.update_filter(level, enabled)
+                print(f"Filtre {level} {'activé' if enabled else 'désactivé'}")
+            else:
+                print(f"Logs display non disponible pour filtre {level}")
+        except Exception as e:
+            print(f"Erreur lors du changement de filtre {level}: {e}")
 
-    # === ACTIONS DE L'INTERFACE ===
-    
     def configure_proxmox(self):
         """Configure Proxmox via le contrôleur"""
         dialog = ProxmoxConfigDialog(self)
@@ -484,7 +496,7 @@ class MainWindowRefactored(QMainWindow):
                 self.tools_logs.add_log(f"Erreur import: {message}", "ERROR")
 
     def export_logs(self):
-        """Exporte les logs"""
+        """Exporte les logs - VERSION AMÉLIORÉE"""
         try:
             from PyQt6.QtWidgets import QMessageBox, QFileDialog
             
@@ -502,11 +514,20 @@ class MainWindowRefactored(QMainWindow):
             
             export_type = "filtered" if reply == QMessageBox.StandardButton.Yes else "complete"
             
+            # Récupérer le contenu selon le type d'export
             if reply == QMessageBox.StandardButton.Yes:
-                logs_content = self.tools_logs.toPlainText()
+                # Logs filtrés - utiliser la nouvelle méthode
+                if hasattr(self.tools_logs, 'get_filtered_logs_text'):
+                    logs_content = self.tools_logs.get_filtered_logs_text()
+                else:
+                    logs_content = self.tools_logs.toPlainText()
             else:
-                # Récupérer tous les logs depuis le composant LogDisplay
-                logs_content = '\n'.join([f"[{level}] {msg}" for msg, level in self.tools_logs.all_logs])
+                # Tous les logs - utiliser la nouvelle méthode
+                if hasattr(self.tools_logs, 'get_all_logs_text'):
+                    logs_content = self.tools_logs.get_all_logs_text()
+                else:
+                    # Fallback - récupérer depuis la liste complète
+                    logs_content = '\n'.join([f"[{level}] {msg}" for msg, level, _ in self.tools_logs.all_logs])
             
             success, export_content, filename = self.controller.export_logs(logs_content, export_type)
             
