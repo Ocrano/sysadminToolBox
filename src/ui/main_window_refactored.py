@@ -1,9 +1,9 @@
 # src/ui/main_window_refactored.py
 """
 MainWindow refactorisée utilisant le pattern MVC
-- Logique métier déplacée vers MainController
-- Interface utilisateur utilise les composants réutilisables
-- Code considérablement réduit et plus maintenable
+- Layout amélioré avec version unique par onglet
+- Meilleure organisation des contrôles de logs
+- Titres de sections plus visibles
 """
 
 import os
@@ -76,7 +76,7 @@ class MainWindowRefactored(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # En-tête
+        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Scripts PowerShell", "📜", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         
@@ -107,7 +107,7 @@ class MainWindowRefactored(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # En-tête
+        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Paramètres", "⚙️", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         
@@ -133,8 +133,12 @@ class MainWindowRefactored(QMainWindow):
         tab = QWidget()
         main_layout = QVBoxLayout()
         
+        # En-tête avec version (UNE SEULE FOIS par onglet)
+        header = SectionHeader("Tools", "🛠️", VersionLabel(self.VERSION, self.DEVELOPER))
+        main_layout.addWidget(header)
+        
         # === SECTION CONNEXION PROXMOX ===
-        connection_group = ConfigurationGroup("Connexion Proxmox", "🔗")
+        connection_group = ConfigurationGroup("Connexion Proxmox")
         connection_layout = QHBoxLayout()
         
         # Bouton configuration
@@ -151,7 +155,6 @@ class MainWindowRefactored(QMainWindow):
         connection_layout.addWidget(self.proxmox_metrics)
         
         connection_layout.addStretch()
-        connection_layout.addWidget(VersionLabel(self.VERSION, self.DEVELOPER))
         
         connection_group.setLayout(connection_layout)
         main_layout.addWidget(connection_group)
@@ -181,14 +184,14 @@ class MainWindowRefactored(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout()
         
-        title = SectionHeader("Actions disponibles", "🛠️")
+        title = SectionHeader("Actions disponibles")
         layout.addWidget(title)
         
         # Grille d'actions organisée
         self.actions_grid = ActionGrid()
         
         # Groupe VM Management
-        vm_group = self.actions_grid.add_group("Gestion des VMs", "🖥️")
+        vm_group = self.actions_grid.add_group("Gestion des VMs")
         
         self.qemu_btn = ActionButton("Gestionnaire QEMU Agent", 'success', "🔧")
         self.qemu_btn.clicked.connect(self.open_qemu_agent_manager)
@@ -206,7 +209,7 @@ class MainWindowRefactored(QMainWindow):
         self.actions_grid.add_action_to_group("Gestion des VMs", self.scan_linux_btn)
         
         # Groupe Infrastructure
-        infra_group = self.actions_grid.add_group("Infrastructure", "🏗️")
+        infra_group = self.actions_grid.add_group("Infrastructure")
         
         self.nodes_btn = ActionButton("Statut des nœuds", 'purple', "📊")
         self.nodes_btn.clicked.connect(self.show_nodes_status)
@@ -225,16 +228,17 @@ class MainWindowRefactored(QMainWindow):
         return widget
 
     def create_logs_section(self):
-        """Section des logs avec contrôles"""
+        """Section des logs avec contrôles - Layout amélioré"""
         widget = QWidget()
         layout = QVBoxLayout()
         
-        # En-tête avec contrôles
-        header_layout = QHBoxLayout()
-        title = SectionHeader("Logs en temps réel", "📋")
-        header_layout.addWidget(title)
+        # === TITRE PRINCIPAL ===
+        title = SectionHeader("Logs en temps réel")
+        layout.addWidget(title)
         
-        header_layout.addStretch()
+        # === CONTRÔLES EN LIGNE (Filtres à gauche, boutons à droite) ===
+        controls_layout = QHBoxLayout()
+        controls_layout.setContentsMargins(0, 10, 0, 15)  # Plus d'espace autour
         
         # Panneau de contrôle des logs
         self.log_controls = LogControlPanel()
@@ -248,11 +252,11 @@ class MainWindowRefactored(QMainWindow):
         
         self.log_controls.export_requested.connect(self.export_logs)
         self.log_controls.clear_requested.connect(self.clear_logs)
-        header_layout.addWidget(self.log_controls)
         
-        layout.addLayout(header_layout)
+        controls_layout.addWidget(self.log_controls)
+        layout.addLayout(controls_layout)
         
-        # Zone d'affichage des logs
+        # === ZONE D'AFFICHAGE DES LOGS ===
         self.tools_logs = LogDisplay("TOOLS")
         layout.addWidget(self.tools_logs)
         
@@ -264,7 +268,7 @@ class MainWindowRefactored(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # En-tête
+        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Import IP Plan", "📊", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         

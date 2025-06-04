@@ -1,6 +1,6 @@
-# src/ui/components/common_widgets.py - VERSION CORRIGÉE AVEC FILTRES
+# src/ui/components/common_widgets.py - VERSION DESIGN PROPRE
 """
-Composants UI réutilisables - Version avec filtres fonctionnels
+Composants UI réutilisables - Version avec design moderne et propre
 """
 
 from PyQt6.QtWidgets import (
@@ -22,7 +22,7 @@ class VersionLabel(QLabel):
 
 
 class ConnectionStatusWidget(QWidget):
-    """Widget de statut de connexion réutilisable"""
+    """Widget de statut de connexion réutilisable - Design propre"""
     
     def __init__(self, service_name="Service"):
         super().__init__()
@@ -51,24 +51,26 @@ class ConnectionStatusWidget(QWidget):
             self.status_label.setText("✅ Connecté")
             self.status_label.setStyleSheet("""
                 QLabel {
-                    padding: 6px 10px;
+                    padding: 6px 12px;
                     border-radius: 4px;
-                    background-color: #d4edda;
-                    color: #155724;
+                    border: 1px solid #28a745;
+                    color: #28a745;
                     font-weight: bold;
                     font-size: 12px;
+                    background-color: transparent;
                 }
             """)
         else:
             self.status_label.setText("❌ Non connecté")
             self.status_label.setStyleSheet("""
                 QLabel {
-                    padding: 6px 10px;
+                    padding: 6px 12px;
                     border-radius: 4px;
-                    background-color: #f8d7da;
-                    color: #721c24;
+                    border: 1px solid #dc3545;
+                    color: #dc3545;
                     font-weight: bold;
                     font-size: 12px;
+                    background-color: transparent;
                 }
             """)
         
@@ -76,7 +78,7 @@ class ConnectionStatusWidget(QWidget):
 
 
 class LogControlPanel(QWidget):
-    """Panneau de contrôle pour les logs avec filtres fonctionnels"""
+    """Panneau de contrôle pour les logs - Design moderne et propre"""
     
     export_requested = pyqtSignal()
     clear_requested = pyqtSignal()
@@ -95,135 +97,143 @@ class LogControlPanel(QWidget):
     
     def init_ui(self):
         layout = QHBoxLayout()
-        layout.setContentsMargins(5, 2, 5, 2)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(15)
         
-        # === SECTION FILTRES ===
-        filters_group = QFrame()
-        filters_group.setFrameStyle(QFrame.Shape.StyledPanel)
-        filters_group.setStyleSheet("""
-            QFrame {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                padding: 2px;
+        # === LABEL FILTRES ===
+        filters_label = QLabel("Filtres:")
+        filters_label.setStyleSheet("""
+            QLabel {
+                font-weight: bold; 
+                font-size: 12px; 
+                color: #495057;
+                margin-right: 10px;
             }
         """)
+        layout.addWidget(filters_label)
         
-        filters_layout = QHBoxLayout()
-        filters_layout.setContentsMargins(8, 4, 8, 4)
-        filters_layout.setSpacing(8)
-        
-        filters_label = QLabel("Filtres:")
-        filters_label.setStyleSheet("font-weight: bold; font-size: 11px; color: #495057;")
-        filters_layout.addWidget(filters_label)
-        
-        # Créer les checkboxes pour chaque niveau
+        # === CHECKBOXES FILTRES ===
         self.filter_checkboxes = {}
         
         filter_configs = [
-            ('DEBUG', '🐛', '#868e96'),
-            ('INFO', 'ℹ️', '#17a2b8'),
-            ('SUCCESS', '✅', '#28a745'),
-            ('WARNING', '⚠️', '#ffc107'),
-            ('ERROR', '❌', '#dc3545')
+            ('DEBUG', '#6c757d'),
+            ('INFO', '#17a2b8'),
+            ('SUCCESS', '#28a745'),
+            ('WARNING', '#ffc107'),
+            ('ERROR', '#dc3545')
         ]
         
-        for level, icon, color in filter_configs:
-            checkbox = QCheckBox(f"{icon} {level}")
+        for level, color in filter_configs:
+            checkbox = QCheckBox(level)
             checkbox.setChecked(self.filters[level])
             checkbox.setStyleSheet(f"""
                 QCheckBox {{
                     font-size: 11px;
-                    font-weight: bold;
+                    font-weight: 600;
                     color: {color};
-                    spacing: 2px;
+                    spacing: 6px;
+                    margin-right: 8px;
                 }}
                 QCheckBox::indicator {{
-                    width: 14px;
-                    height: 14px;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 3px;
                 }}
                 QCheckBox::indicator:checked {{
                     background-color: {color};
-                    border: 1px solid {color};
-                    border-radius: 2px;
+                    border: 2px solid {color};
                 }}
                 QCheckBox::indicator:unchecked {{
-                    background-color: white;
-                    border: 1px solid #ccc;
-                    border-radius: 2px;
+                    background-color: transparent;
+                    border: 2px solid #dee2e6;
+                }}
+                QCheckBox::indicator:hover {{
+                    border: 2px solid {color};
                 }}
             """)
             
-            # Connecter le signal avec une lambda qui capture la valeur de level
+            # Connecter le signal
             checkbox.stateChanged.connect(lambda state, lvl=level: self.on_filter_changed(lvl, state == 2))
             
             self.filter_checkboxes[level] = checkbox
-            filters_layout.addWidget(checkbox)
+            layout.addWidget(checkbox)
         
-        filters_group.setLayout(filters_layout)
-        layout.addWidget(filters_group)
-        
+        # Espacement flexible
         layout.addStretch()
         
         # === BOUTONS D'ACTION ===
-        # Bouton tout sélectionner/désélectionner
-        self.toggle_all_btn = QPushButton("🔄 Tout")
+        # Bouton tout/aucun
+        self.toggle_all_btn = QPushButton("Tout")
         self.toggle_all_btn.setToolTip("Sélectionner/Désélectionner tous les filtres")
         self.toggle_all_btn.clicked.connect(self.toggle_all_filters)
         self.toggle_all_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                padding: 6px 10px;
-                border-radius: 3px;
+                background-color: transparent;
+                border: 1px solid #6c757d;
+                color: #6c757d;
+                padding: 6px 12px;
+                border-radius: 4px;
                 font-size: 11px;
-                margin-right: 5px;
+                font-weight: 600;
+                margin-right: 8px;
             }
             QPushButton:hover {
-                background-color: #5a6268;
+                background-color: #6c757d;
+                color: white;
             }
         """)
         layout.addWidget(self.toggle_all_btn)
         
         # Bouton export
-        self.export_btn = QPushButton("💾 Exporter")
+        self.export_btn = QPushButton("Exporter")
         self.export_btn.clicked.connect(self.export_requested.emit)
         self.export_btn.setStyleSheet("""
             QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
+                background-color: transparent;
+                border: 1px solid #28a745;
+                color: #28a745;
                 padding: 6px 12px;
-                border-radius: 3px;
-                font-size: 12px;
-                margin-right: 5px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+                margin-right: 8px;
             }
             QPushButton:hover {
-                background-color: #218838;
+                background-color: #28a745;
+                color: white;
             }
         """)
         layout.addWidget(self.export_btn)
         
         # Bouton clear
-        self.clear_btn = QPushButton("🗑️ Effacer")
+        self.clear_btn = QPushButton("Effacer")
         self.clear_btn.clicked.connect(self.clear_requested.emit)
         self.clear_btn.setStyleSheet("""
             QPushButton {
-                background-color: #dc3545;
-                color: white;
-                border: none;
+                background-color: transparent;
+                border: 1px solid #dc3545;
+                color: #dc3545;
                 padding: 6px 12px;
-                border-radius: 3px;
-                font-size: 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #c82333;
+                background-color: #dc3545;
+                color: white;
             }
         """)
         layout.addWidget(self.clear_btn)
         
         self.setLayout(layout)
+        
+        # Style du conteneur principal
+        self.setStyleSheet("""
+            LogControlPanel {
+                background-color: transparent;
+                border: none;
+            }
+        """)
     
     def on_filter_changed(self, level, enabled):
         """Gère le changement d'état d'un filtre"""
@@ -242,9 +252,8 @@ class LogControlPanel(QWidget):
         
         for level, checkbox in self.filter_checkboxes.items():
             checkbox.setChecked(new_state)
-            # Le signal stateChanged sera automatiquement émis
         
-        self.toggle_all_btn.setText("🔄 Tout" if new_state else "🔄 Aucun")
+        self.toggle_all_btn.setText("Aucun" if new_state else "Tout")
     
     def get_active_filters(self):
         """Retourne la liste des filtres actifs"""
@@ -498,25 +507,28 @@ class SectionHeader(QWidget):
 
 
 class ConfigurationGroup(QGroupBox):
-    """Groupe de configuration standardisé"""
+    """Groupe de configuration standardisé - Design propre"""
     
-    def __init__(self, title, icon="🔗"):
-        super().__init__(f"{icon} {title}")
+    def __init__(self, title, icon=""):
+        # Titre sans icône par défaut pour un look plus propre
+        display_title = f"{icon} {title}" if icon else title
+        super().__init__(display_title)
         self.setMaximumHeight(80)
         self.setStyleSheet("""
             QGroupBox {
-                font-weight: bold;
+                font-weight: 600;
                 border: 1px solid #dee2e6;
                 border-radius: 6px;
                 margin-top: 8px;
                 padding-top: 12px;
-                background-color: #f8f9fa;
+                background-color: transparent;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px 0 4px;
+                left: 12px;
+                padding: 0 6px 0 6px;
                 color: #495057;
+                font-size: 12px;
             }
         """)
 
@@ -530,11 +542,31 @@ class ActionGrid(QWidget):
         self.groups = {}
         self.setLayout(self.layout)
     
-    def add_group(self, group_name, icon="🛠️"):
+    def add_group(self, group_name, icon=""):
         """Ajoute un groupe d'actions"""
-        group = QGroupBox(f"{icon} {group_name}")
+        display_title = f"{icon} {group_name}" if icon else group_name
+        group = QGroupBox(display_title)
         group_layout = QVBoxLayout()
         group.setLayout(group_layout)
+        
+        # Style plus propre pour les groupes
+        group.setStyleSheet("""
+            QGroupBox {
+                font-weight: 600;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                margin-top: 8px;
+                padding-top: 12px;
+                background-color: transparent;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 12px;
+                padding: 0 6px 0 6px;
+                color: #495057;
+                font-size: 12px;
+            }
+        """)
         
         self.groups[group_name] = group_layout
         self.layout.addWidget(group)
@@ -560,7 +592,7 @@ class WidgetFactory:
     """Factory pour créer des widgets standardisés"""
     
     @staticmethod
-    def create_config_button(text, color='primary', icon="⚙️"):
+    def create_config_button(text, color='primary', icon=""):
         """Crée un bouton de configuration"""
         btn = ActionButton(text, color, icon)
         btn.setFixedWidth(140)
@@ -575,7 +607,7 @@ class WidgetFactory:
 
 
 class MetricsDisplay(QWidget):
-    """Affichage de métriques avec icônes et couleurs"""
+    """Affichage de métriques avec icônes et couleurs - Design propre"""
     
     def __init__(self):
         super().__init__()
@@ -583,16 +615,17 @@ class MetricsDisplay(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
     
-    def add_metric(self, name, value, icon="📊", color="#17a2b8"):
+    def add_metric(self, name, value, icon="", color="#17a2b8"):
         """Ajoute une métrique"""
         metric_widget = QWidget()
         metric_layout = QVBoxLayout()
-        metric_layout.setContentsMargins(10, 5, 10, 5)
+        metric_layout.setContentsMargins(15, 8, 15, 8)
         
-        # Icône + valeur
-        value_label = QLabel(f"{icon} {value}")
+        # Valeur principale
+        display_text = f"{icon} {value}" if icon else str(value)
+        value_label = QLabel(display_text)
         value_label.setStyleSheet(f"""
-            font-size: 18px; 
+            font-size: 16px; 
             font-weight: bold; 
             color: {color};
             text-align: center;
@@ -601,32 +634,34 @@ class MetricsDisplay(QWidget):
         # Nom de la métrique
         name_label = QLabel(name)
         name_label.setStyleSheet("""
-            font-size: 12px; 
+            font-size: 11px; 
             color: #6c757d;
             text-align: center;
+            font-weight: 500;
         """)
         
         metric_layout.addWidget(value_label)
         metric_layout.addWidget(name_label)
         metric_widget.setLayout(metric_layout)
         
-        # Style de la carte
-        metric_widget.setStyleSheet("""
-            QWidget {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
+        # Style de la carte - plus propre
+        metric_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: transparent;
+                border: 1px solid {color};
                 border-radius: 6px;
                 margin: 2px;
-            }
+            }}
         """)
         
         self.metrics[name] = value_label
         self.layout.addWidget(metric_widget)
     
-    def update_metric(self, name, value, icon="📊"):
+    def update_metric(self, name, value, icon=""):
         """Met à jour une métrique"""
         if name in self.metrics:
-            self.metrics[name].setText(f"{icon} {value}")
+            display_text = f"{icon} {value}" if icon else str(value)
+            self.metrics[name].setText(display_text)
     
     def clear_metrics(self):
         """Efface toutes les métriques"""
