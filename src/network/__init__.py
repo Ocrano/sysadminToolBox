@@ -1,1 +1,3 @@
-"""Extensions réseau"""
+"""
+Extensions réseau (futur)
+"""

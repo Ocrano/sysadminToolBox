@@ -18,11 +18,11 @@ class MainController(QObject):
     scripts_loaded = pyqtSignal(list)  # script_list
     logs_updated = pyqtSignal(str)  # log_message
     
-    def __init__(self, git_manager, script_runner, proxmox_handler):
+    def __init__(self, git_manager, script_runner, proxmox_service):
         super().__init__()
         self.git_manager = git_manager
         self.script_runner = script_runner
-        self.proxmox_handler = proxmox_handler
+        self.proxmox_service = proxmox_service
         
         log_info("MainController initialisé", "Controller")
     
@@ -31,7 +31,7 @@ class MainController(QObject):
         """Configure la connexion Proxmox"""
         log_info(f"Configuration Proxmox pour {config['ip']}", "Controller")
         
-        connected = self.proxmox_handler.connect(config)
+        connected = self.proxmox_service.connect(config)
         if connected:
             log_success("Connexion Proxmox établie", "Controller")
             self.proxmox_connection_changed.emit(True)
@@ -43,16 +43,16 @@ class MainController(QObject):
     
     def get_proxmox_info(self):
         """Récupère les informations Proxmox pour l'affichage"""
-        if not self.proxmox_handler.is_connected():
+        if not self.proxmox_service.is_connected():
             return None
         
         try:
-            version = self.proxmox_handler.get_version()
-            nodes_count = len(self.proxmox_handler.nodes)
+            version = self.proxmox_service.get_version()
+            nodes_count = len(self.proxmox_service.nodes)
             
             # Statistiques VMs
-            total_vms = len(self.proxmox_handler.list_vms())
-            running_vms = len([vm for vm in self.proxmox_handler.list_vms() if vm['status'] == 'running'])
+            total_vms = len(self.proxmox_service.list_vms())
+            running_vms = len([vm for vm in self.proxmox_service.list_vms() if vm['status'] == 'running'])
             
             return {
                 'version': version,

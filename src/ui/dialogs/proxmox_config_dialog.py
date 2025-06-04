@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QComboBox, QSpinBox, QGroupBox, QTextEdit
 )
 from PyQt6.QtGui import QPixmap, QPalette
-from ...handlers.proxmox_handler import ProxmoxHandler  # Import du handler
+from ...services.proxmox_service import ProxmoxService  # Import du service refactorisé
 
 class ConnectionTestThread(QThread):
     """Thread pour tester la connexion Proxmox en arrière-plan"""
@@ -24,7 +24,7 @@ class ConnectionTestThread(QThread):
             self.progress_update.emit("Connexion en cours...")
             
             # Créer une instance temporaire pour le test
-            temp_handler = ProxmoxHandler()
+            temp_handler = ProxmoxService()
             
             # Test de connexion
             success = temp_handler.connect(self.config)
@@ -214,7 +214,7 @@ class ProxmoxConfigDialog(QDialog):
         self.test_button.setEnabled(False)
         self.status_label.setText("Test en cours...")
         
-        # Lancer le thread de test (qui créera sa propre instance de ProxmoxHandler)
+        # Lancer le thread de test (qui créera sa propre instance de ProxmoxService)
         self.test_thread = ConnectionTestThread(config)
         self.test_thread.connection_result.connect(self.on_connection_tested)
         self.test_thread.progress_update.connect(self.on_progress_update)
