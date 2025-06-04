@@ -1,1 +1,1 @@
-"""Module init file"""
+"""Services métier de l'application"""

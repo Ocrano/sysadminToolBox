@@ -1,1 +1,1 @@
-"""Module init file"""
+"""Composants UI réutilisables"""

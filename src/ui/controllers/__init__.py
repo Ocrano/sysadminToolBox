@@ -1,1 +1,1 @@
-"""Module init file"""
+"""Contrôleurs MVC pour l'interface utilisateur"""

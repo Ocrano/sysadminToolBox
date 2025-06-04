@@ -1,38 +1,39 @@
 #!/usr/bin/env python3
 """
-ToolboxPyQt6 - Point d'entrée principal
+Point d'entrée principal - Version refactorisée
+Utilise la nouvelle architecture MVC
 """
+
 import sys
 import os
+from PyQt6.QtWidgets import QApplication
 
-# Ajouter le répertoire src au PYTHONPATH
+# Ajouter le chemin src au PYTHONPATH
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from PyQt6.QtWidgets import QApplication
-from src.ui.main_window import MainWindow
+from src.ui.main_window_refactored import MainWindowRefactored
+from src.services.proxmox_service import ProxmoxService
 from src.handlers.git_manager import GitLabManager
 from src.handlers.script_runner import ScriptRunner
-from src.handlers.proxmox_handler import ProxmoxHandler
 from src.core.logger import log_info, log_success
 
 def main():
-    log_info("Démarrage de ToolboxPyQt6", "Main")
-    
     app = QApplication(sys.argv)
     
-    # Configuration
-    GITLAB_URL = "https://git.gtd-international.com"
+    # Initialiser les services
+    log_info("Démarrage Toolbox PyQt6 - Version Refactorisée", "Main")
     
-    # Initialisation
-    git_manager = GitLabManager(GITLAB_URL)
+    # Services métier
+    proxmox_service = ProxmoxService()
+    git_manager = GitLabManager("")  # 🔧 URL vide, configurée via interface
     script_runner = ScriptRunner()
-    proxmox_handler = ProxmoxHandler()
     
-    # Fenêtre principale
-    window = MainWindow(git_manager, script_runner, proxmox_handler)
+    # Fenêtre principale refactorisée
+    window = MainWindowRefactored(git_manager, script_runner, proxmox_service)
     window.show()
     
-    log_success("Application démarrée", "Main")
+    log_success("Application démarrée avec succès", "Main")
+    
     return app.exec()
 
 if __name__ == "__main__":

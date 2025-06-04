@@ -1,1 +1,1 @@
-"""Fonctionnalités réseau"""
+"""Extensions réseau"""
