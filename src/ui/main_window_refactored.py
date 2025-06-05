@@ -1,16 +1,14 @@
 # src/ui/main_window_refactored.py
 """
-MainWindow refactorisée utilisant le pattern MVC
-- Layout amélioré avec version unique par onglet
-- Meilleure organisation des contrôles de logs
-- Titres de sections plus visibles
+MainWindow refactorisée - Layout propre et épuré
 """
 
 import os
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QMainWindow, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout,
-    QSplitter, QMessageBox, QFileDialog, QInputDialog, QLineEdit
+    QSplitter, QMessageBox, QFileDialog, QInputDialog, QLineEdit,
+    QLabel, QPushButton  # ← AJOUT DES IMPORTS MANQUANTS
 )
 
 # Import des composants refactorisés
@@ -29,7 +27,7 @@ from ..core.logger import toolbox_logger, log_info, log_debug, log_error, log_su
 
 
 class MainWindowRefactored(QMainWindow):
-    """Fenêtre principale refactorisée - Version courte et maintenable"""
+    """Fenêtre principale refactorisée - Layout propre et épuré"""
     
     VERSION = "Alpha 0.0.6"
     DEVELOPER = "ocrano"
@@ -51,13 +49,27 @@ class MainWindowRefactored(QMainWindow):
         self.setup_logging()
 
     def init_ui(self):
-        """Interface utilisateur simplifiée"""
+        """Interface utilisateur finale"""
         self.setWindowTitle("Toolbox PyQt6 - Refactorisé")
         self.setGeometry(200, 200, 1200, 800)
         self.setMinimumSize(1000, 600)
         
-        # Onglets principaux
+        # Onglets principaux SANS marges
         self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: none;
+                margin: 0px;
+                padding: 0px;
+            }
+            QTabWidget::tab-bar {
+                alignment: left;
+            }
+            QTabWidget > QWidget {
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
         self.setCentralWidget(self.tabs)
         
         # Créer les onglets
@@ -72,21 +84,21 @@ class MainWindowRefactored(QMainWindow):
         log_success("Interface refactorisée initialisée", "MainWindow")
 
     def create_scripts_tab(self):
-        """Onglet Scripts PowerShell simplifié"""
+        """Onglet Scripts PowerShell"""
         tab = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(8, 3, 8, 8)
+        layout.setSpacing(3)
         
-        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Scripts PowerShell", "📜", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         
-        # Liste des scripts
         from PyQt6.QtWidgets import QListWidget
         self.scripts_list = QListWidget()
         layout.addWidget(self.scripts_list)
         
-        # Boutons d'action
         buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(3)
         
         fetch_btn = ActionButton("Récupérer Scripts", 'info', "📥")
         fetch_btn.clicked.connect(self.load_scripts_from_gitlab)
@@ -100,20 +112,21 @@ class MainWindowRefactored(QMainWindow):
         tab.setLayout(layout)
         
         self.tabs.addTab(tab, "Scripts PowerShell")
-        self.load_local_scripts()  # Charger les scripts locaux au démarrage
+        self.load_local_scripts()
 
     def create_settings_tab(self):
-        """Onglet Paramètres simplifié"""
+        """Onglet Paramètres"""
         tab = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(8, 3, 8, 8)
+        layout.setSpacing(3)
         
-        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Paramètres", "⚙️", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         
-        # Configuration GitLab
         gitlab_group = ConfigurationGroup("Configuration GitLab", "🦊")
         gitlab_layout = QHBoxLayout()
+        gitlab_layout.setContentsMargins(3, 1, 3, 1)
         
         token_btn = WidgetFactory.create_config_button("Configurer Token GitLab", 'warning', "🔑")
         token_btn.clicked.connect(self.configure_gitlab_token)
@@ -129,38 +142,78 @@ class MainWindowRefactored(QMainWindow):
         self.tabs.addTab(tab, "Paramètres")
 
     def create_tools_tab(self):
-        """Onglet Tools refactorisé avec composants"""
+        """Onglet Tools - Layout CLEAN et épuré"""
         tab = QWidget()
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # En-tête avec version (UNE SEULE FOIS par onglet)
-        header = SectionHeader("Tools", "🛠️", VersionLabel(self.VERSION, self.DEVELOPER))
-        main_layout.addWidget(header)
+        # === BARRE DE CONNEXION SIMPLIFIÉE ===
+        connection_bar = QWidget()
+        connection_bar.setFixedHeight(50)  # Hauteur fixe pour uniformité
+        connection_bar.setStyleSheet("""
+            QWidget {
+                background-color: transparent;
+                border-bottom: 1px solid #555;
+                padding: 8px;
+            }
+        """)
         
-        # === SECTION CONNEXION PROXMOX ===
-        connection_group = ConfigurationGroup("Connexion Proxmox")
         connection_layout = QHBoxLayout()
+        connection_layout.setContentsMargins(15, 8, 15, 8)
+        connection_layout.setSpacing(15)
         
-        # Bouton configuration
-        self.config_proxmox_btn = WidgetFactory.create_config_button("Configurer", 'primary', "⚙️")
+        # Label "Connexion Proxmox"
+        connection_label = QLabel("🔗 Connexion Proxmox")
+        connection_label.setStyleSheet("""
+            QLabel {
+                font-size: 13px;
+                font-weight: bold;
+                color: #ffffff;
+                min-width: 150px;
+            }
+        """)
+        connection_layout.addWidget(connection_label)
+        
+        # Bouton configurer - PROPRE
+        self.config_proxmox_btn = QPushButton("⚙️ Configurer")
         self.config_proxmox_btn.clicked.connect(self.configure_proxmox)
+        self.config_proxmox_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: 600;
+                font-size: 11px;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+        """)
         connection_layout.addWidget(self.config_proxmox_btn)
         
-        # Statut de connexion
+        # Statut de connexion - ÉPURÉ
         self.connection_status = ConnectionStatusWidget("Proxmox")
         connection_layout.addWidget(self.connection_status)
         
-        # Métriques Proxmox
+        # Métriques Proxmox - COMPACTES
         self.proxmox_metrics = MetricsDisplay()
         connection_layout.addWidget(self.proxmox_metrics)
         
+        # Version à droite
         connection_layout.addStretch()
+        version_label = VersionLabel(self.VERSION, self.DEVELOPER)
+        connection_layout.addWidget(version_label)
         
-        connection_group.setLayout(connection_layout)
-        main_layout.addWidget(connection_group)
+        connection_bar.setLayout(connection_layout)
+        main_layout.addWidget(connection_bar)
         
         # === SPLITTER ACTIONS / LOGS ===
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
+        main_splitter.setContentsMargins(0, 0, 0, 0)
         
         # Actions à gauche
         actions_widget = self.create_actions_section()
@@ -183,15 +236,17 @@ class MainWindowRefactored(QMainWindow):
         """Section des actions Proxmox"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 5, 10)  # Marges propres
+        layout.setSpacing(5)
         
-        title = SectionHeader("Actions disponibles")
+        title = SectionHeader("Actions disponibles", "🛠️")
         layout.addWidget(title)
         
-        # Grille d'actions organisée
+        # === GRILLE D'ACTIONS AVEC BOUTONS ===
         self.actions_grid = ActionGrid()
         
         # Groupe VM Management
-        vm_group = self.actions_grid.add_group("Gestion des VMs")
+        vm_group = self.actions_grid.add_group("Gestion des VMs", "🖥️")
         
         self.qemu_btn = ActionButton("Gestionnaire QEMU Agent", 'success', "🔧")
         self.qemu_btn.clicked.connect(self.open_qemu_agent_manager)
@@ -209,7 +264,7 @@ class MainWindowRefactored(QMainWindow):
         self.actions_grid.add_action_to_group("Gestion des VMs", self.scan_linux_btn)
         
         # Groupe Infrastructure
-        infra_group = self.actions_grid.add_group("Infrastructure")
+        infra_group = self.actions_grid.add_group("Infrastructure", "🏗️")
         
         self.nodes_btn = ActionButton("Statut des nœuds", 'purple', "📊")
         self.nodes_btn.clicked.connect(self.show_nodes_status)
@@ -228,35 +283,35 @@ class MainWindowRefactored(QMainWindow):
         return widget
 
     def create_logs_section(self):
-        """Section des logs avec contrôles - Layout amélioré"""
+        """Section des logs avec contrôles - comme Network"""
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(5, 10, 10, 10)  # Marges équilibrées
+        layout.setSpacing(5)
         
-        # === TITRE PRINCIPAL ===
-        title = SectionHeader("Logs en temps réel")
-        layout.addWidget(title)
+        # En-tête avec contrôles
+        header_layout = QHBoxLayout()
+        title = SectionHeader("Logs en temps réel", "📋")
+        header_layout.addWidget(title)
         
-        # === CONTRÔLES EN LIGNE (Filtres à gauche, boutons à droite) ===
-        controls_layout = QHBoxLayout()
-        controls_layout.setContentsMargins(0, 10, 0, 15)  # Plus d'espace autour
+        header_layout.addStretch()
         
         # Panneau de contrôle des logs
         self.log_controls = LogControlPanel()
         
-        # Connexion sécurisée des signaux
         try:
             if hasattr(self.log_controls, 'filter_changed'):
                 self.log_controls.filter_changed.connect(self.on_log_filter_changed)
         except AttributeError:
-            print("Signal filter_changed non disponible - filtres désactivés")
+            print("Signal filter_changed non disponible")
         
         self.log_controls.export_requested.connect(self.export_logs)
         self.log_controls.clear_requested.connect(self.clear_logs)
+        header_layout.addWidget(self.log_controls)
         
-        controls_layout.addWidget(self.log_controls)
-        layout.addLayout(controls_layout)
+        layout.addLayout(header_layout)
         
-        # === ZONE D'AFFICHAGE DES LOGS ===
+        # Zone d'affichage des logs
         self.tools_logs = LogDisplay("TOOLS")
         layout.addWidget(self.tools_logs)
         
@@ -264,20 +319,19 @@ class MainWindowRefactored(QMainWindow):
         return widget
 
     def create_import_tab(self):
-        """Onglet Import IP Plan simplifié"""
+        """Onglet Import IP Plan"""
         tab = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(8, 3, 8, 8)
+        layout.setSpacing(3)
         
-        # En-tête avec version (UNE SEULE FOIS par onglet)
         header = SectionHeader("Import IP Plan", "📊", VersionLabel(self.VERSION, self.DEVELOPER))
         layout.addWidget(header)
         
-        # Bouton d'import
         import_btn = ActionButton("Importer un plan d'adressage (.xlsx)", 'primary', "📁")
         import_btn.clicked.connect(self.import_ip_plan)
         layout.addWidget(import_btn)
         
-        # Tableau des résultats
         from PyQt6.QtWidgets import QTableWidget
         self.ip_table = QTableWidget()
         layout.addWidget(self.ip_table)
@@ -315,14 +369,12 @@ class MainWindowRefactored(QMainWindow):
     
     def on_proxmox_connection_changed(self, connected):
         """Réagit aux changements de connexion Proxmox"""
-        # Mettre à jour le statut
         if connected:
             info = self.controller.get_proxmox_info()
             if info:
                 info_text = f"Proxmox VE {info['version']} • {info['nodes_count']} nœud(s)"
                 self.connection_status.update_status(True, info_text)
                 
-                # Mettre à jour les métriques
                 self.proxmox_metrics.clear_metrics()
                 self.proxmox_metrics.add_metric("VMs Total", info['total_vms'], "🖥️", "#17a2b8")
                 self.proxmox_metrics.add_metric("VMs Actives", info['running_vms'], "🟢", "#28a745")
@@ -345,7 +397,6 @@ class MainWindowRefactored(QMainWindow):
 
     def on_log_message(self, message):
         """Réagit aux nouveaux logs"""
-        # Extraire le niveau du log
         level = "INFO"
         if "ERROR" in message:
             level = "ERROR"
@@ -359,7 +410,7 @@ class MainWindowRefactored(QMainWindow):
         self.tools_logs.add_log(message, level)
 
     def on_log_filter_changed(self, level, enabled):
-        """Réagit aux changements de filtres - VERSION CORRIGÉE"""
+        """Réagit aux changements de filtres"""
         try:
             if hasattr(self, 'tools_logs') and hasattr(self.tools_logs, 'update_filter'):
                 self.tools_logs.update_filter(level, enabled)
@@ -369,43 +420,34 @@ class MainWindowRefactored(QMainWindow):
         except Exception as e:
             print(f"Erreur lors du changement de filtre {level}: {e}")
 
+    # === MÉTHODES D'ACTION ===
+    
     def configure_proxmox(self):
-        """Configure Proxmox via le contrôleur"""
         dialog = ProxmoxConfigDialog(self)
         if dialog.exec():
             config = dialog.get_config()
             success, message = self.controller.configure_proxmox(config)
-            
             if success:
                 QMessageBox.information(self, "Connexion réussie", message)
             else:
                 QMessageBox.critical(self, "Échec", message)
 
     def configure_gitlab_token(self):
-        """Configure le token GitLab"""
-        token, ok = QInputDialog.getText(
-            self, "GitLab Token", 
-            "Entrez votre token GitLab :", 
-            QLineEdit.EchoMode.Password
-        )
-        
+        token, ok = QInputDialog.getText(self, "GitLab Token", "Entrez votre token GitLab :", QLineEdit.EchoMode.Password)
         if ok:
             success, message = self.controller.configure_gitlab_token(token)
             if success:
                 QMessageBox.information(self, "Succès", message)
 
     def load_scripts_from_gitlab(self):
-        """Charge les scripts depuis GitLab"""
         scripts = self.controller.load_scripts_from_gitlab()
         if not scripts:
             QMessageBox.information(self, "Scripts", "Aucun script trouvé sur GitLab.")
 
     def load_local_scripts(self):
-        """Charge les scripts locaux"""
         self.controller.load_local_scripts()
 
     def run_selected_script(self):
-        """Exécute le script sélectionné"""
         selected_item = self.scripts_list.currentItem()
         if selected_item:
             script_name = selected_item.text()
@@ -416,12 +458,10 @@ class MainWindowRefactored(QMainWindow):
             QMessageBox.warning(self, "Sélection", "Aucun script sélectionné.")
 
     def open_qemu_agent_manager(self):
-        """Ouvre le gestionnaire QEMU Agent"""
         dialog = QemuAgentManagerDialog(self, self.controller.proxmox_service)
         dialog.exec()
 
     def list_all_vms(self):
-        """Liste toutes les VMs"""
         vms = self.controller.proxmox_service.list_vms()
         self.tools_logs.add_log(f"{len(vms)} VMs trouvées dans le cluster", "SUCCESS")
         for vm in vms:
@@ -429,17 +469,14 @@ class MainWindowRefactored(QMainWindow):
             self.tools_logs.add_log(f"VM: {vm['name']} (ID: {vm['vmid']}) on {vm['node']} - {status}", "INFO")
 
     def scan_linux_vms(self):
-        """Scanne les VMs Linux"""
         linux_vms = self.controller.proxmox_service.get_linux_vms()
         self.tools_logs.add_log(f"{len(linux_vms)} VMs Linux actives trouvées", "SUCCESS")
         for vm in linux_vms:
             self.tools_logs.add_log(f"Linux VM: {vm['name']} - IP: {vm.get('ip', 'N/A')} on {vm['node']}", "INFO")
 
     def show_nodes_status(self):
-        """Affiche le statut des nœuds"""
         statuses = self.controller.proxmox_service.get_node_status()
         self.tools_logs.add_log(f"Statut de {len(statuses)} nœud(s) récupéré", "SUCCESS")
-        
         for status in statuses:
             import datetime
             cpu_percent = status['cpu'] * 100
@@ -447,23 +484,19 @@ class MainWindowRefactored(QMainWindow):
             mem_used_gb = status['mem_used'] / (1024**3)
             mem_percent = (status['mem_used'] / status['mem_total'] * 100) if status['mem_total'] > 0 else 0
             uptime_str = str(datetime.timedelta(seconds=status['uptime']))
-            
             self.tools_logs.add_log(f"Node: {status['node']}", "INFO")
             self.tools_logs.add_log(f"  CPU: {cpu_percent:.1f}% | RAM: {mem_used_gb:.1f}G/{mem_total_gb:.1f}G ({mem_percent:.1f}%)", "INFO")
             self.tools_logs.add_log(f"  Uptime: {uptime_str}", "INFO")
 
     def show_storage_info(self):
-        """Affiche les informations de stockage"""
         storages = self.controller.proxmox_service.get_storage_info()
         self.tools_logs.add_log(f"{len(storages)} stockage(s) analysé(s)", "SUCCESS")
-        
         for storage in storages:
             if storage.get('total', 0) > 0:
                 total_gb = storage['total'] / (1024**3)
                 used_gb = storage['used'] / (1024**3)
                 available_gb = storage['available'] / (1024**3)
                 percent_used = (storage['used'] / storage['total'] * 100)
-                
                 self.tools_logs.add_log(f"Storage: {storage['storage']} ({storage['type']}) on {storage['node']}", "INFO")
                 self.tools_logs.add_log(f"  Used: {used_gb:.1f}G / {total_gb:.1f}G ({percent_used:.1f}%)", "INFO")
                 self.tools_logs.add_log(f"  Available: {available_gb:.1f}G", "INFO")
@@ -471,28 +504,20 @@ class MainWindowRefactored(QMainWindow):
                 self.tools_logs.add_log(f"Storage: {storage['storage']} ({storage['type']}) on {storage['node']}: Info unavailable", "INFO")
 
     def import_ip_plan(self):
-        """Importe un plan d'adressage IP"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Sélectionner un fichier Excel", "", "Fichiers Excel (*.xlsx)"
-        )
-        
+        file_path, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier Excel", "", "Fichiers Excel (*.xlsx)")
         if file_path:
             success, data, message = self.controller.import_ip_plan(file_path)
-            
             if success:
-                # Mettre à jour le tableau
                 self.ip_table.clear()
                 self.ip_table.setColumnCount(4)
                 self.ip_table.setRowCount(len(data))
                 self.ip_table.setHorizontalHeaderLabels(["Hostname", "Prod IP", "Mgt IP", "Idrac IP"])
-
                 for row_idx, (hostname, prod_ip, mgt_ip, idrac_ip) in enumerate(data):
                     from PyQt6.QtWidgets import QTableWidgetItem
                     self.ip_table.setItem(row_idx, 0, QTableWidgetItem(hostname))
                     self.ip_table.setItem(row_idx, 1, QTableWidgetItem(prod_ip))
                     self.ip_table.setItem(row_idx, 2, QTableWidgetItem(mgt_ip))
                     self.ip_table.setItem(row_idx, 3, QTableWidgetItem(idrac_ip))
-
                 QMessageBox.information(self, "Import réussi", message)
                 self.tools_logs.add_log(message, "SUCCESS")
             else:
@@ -500,71 +525,31 @@ class MainWindowRefactored(QMainWindow):
                 self.tools_logs.add_log(f"Erreur import: {message}", "ERROR")
 
     def export_logs(self):
-        """Exporte les logs - VERSION AMÉLIORÉE"""
         try:
-            from PyQt6.QtWidgets import QMessageBox, QFileDialog
-            
-            reply = QMessageBox.question(
-                self,
-                "Type d'export",
-                "Quel type de logs voulez-vous exporter ?\n\n" +
-                "• OUI = Logs actuellement affichés (filtrés)\n" +
-                "• NON = Tous les logs (complets)",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel
-            )
-            
+            reply = QMessageBox.question(self, "Type d'export", "Quel type de logs voulez-vous exporter ?\n\n• OUI = Logs actuellement affichés (filtrés)\n• NON = Tous les logs (complets)", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Cancel:
                 return
-            
             export_type = "filtered" if reply == QMessageBox.StandardButton.Yes else "complete"
-            
-            # Récupérer le contenu selon le type d'export
             if reply == QMessageBox.StandardButton.Yes:
-                # Logs filtrés - utiliser la nouvelle méthode
-                if hasattr(self.tools_logs, 'get_filtered_logs_text'):
-                    logs_content = self.tools_logs.get_filtered_logs_text()
-                else:
-                    logs_content = self.tools_logs.toPlainText()
+                logs_content = self.tools_logs.get_filtered_logs_text() if hasattr(self.tools_logs, 'get_filtered_logs_text') else self.tools_logs.toPlainText()
             else:
-                # Tous les logs - utiliser la nouvelle méthode
-                if hasattr(self.tools_logs, 'get_all_logs_text'):
-                    logs_content = self.tools_logs.get_all_logs_text()
-                else:
-                    # Fallback - récupérer depuis la liste complète
-                    logs_content = '\n'.join([f"[{level}] {msg}" for msg, level, _ in self.tools_logs.all_logs])
-            
+                logs_content = self.tools_logs.get_all_logs_text() if hasattr(self.tools_logs, 'get_all_logs_text') else '\n'.join([f"[{level}] {msg}" for msg, level, _ in self.tools_logs.all_logs])
             success, export_content, filename = self.controller.export_logs(logs_content, export_type)
-            
             if success:
-                file_path, _ = QFileDialog.getSaveFileName(
-                    self,
-                    "Exporter les logs",
-                    filename,
-                    "Fichiers log (*.log);;Fichiers texte (*.txt);;Tous les fichiers (*.*)"
-                )
-                
+                file_path, _ = QFileDialog.getSaveFileName(self, "Exporter les logs", filename, "Fichiers log (*.log);;Fichiers texte (*.txt);;Tous les fichiers (*.*)")
                 if file_path:
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(export_content)
-                    
                     QMessageBox.information(self, "Export réussi", f"Logs exportés vers:\n{file_path}")
                     self.tools_logs.add_log(f"Logs exportés vers: {os.path.basename(file_path)}", "SUCCESS")
             else:
                 QMessageBox.critical(self, "Erreur", "Impossible d'exporter les logs")
-                
         except Exception as e:
             QMessageBox.critical(self, "Erreur d'export", f"Erreur lors de l'export:\n{str(e)}")
             self.tools_logs.add_log(f"Erreur export: {str(e)}", "ERROR")
 
     def clear_logs(self):
-        """Efface les logs"""
-        reply = QMessageBox.question(
-            self,
-            "Effacer les logs",
-            "Êtes-vous sûr de vouloir effacer tous les logs ?\n\nCette action est irréversible.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
+        reply = QMessageBox.question(self, "Effacer les logs", "Êtes-vous sûr de vouloir effacer tous les logs ?\n\nCette action est irréversible.", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             self.tools_logs.clear_logs()
             self.tools_logs.add_log("Logs effacés par l'utilisateur", "WARNING")
