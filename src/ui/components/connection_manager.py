@@ -123,9 +123,10 @@ class ConnectionCard(QWidget):
         self.info_frame.setFixedHeight(0)  # Caché par défaut
         self.info_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 0.05);
-                border-radius: 4px;
-                margin: 4px 0px;
+                background-color: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                margin: 6px 2px;
             }
         """)
         
@@ -164,10 +165,11 @@ class ConnectionCard(QWidget):
                 background-color: #007bff;
                 color: white;
                 border: none;
-                padding: 6px 12px;
-                border-radius: 3px;
-                font-size: 10px;
+                padding: 8px 14px;
+                border-radius: 4px;
+                font-size: 11px;
                 font-weight: 600;
+                min-height: 30px;
             }
             QPushButton:hover { background-color: #0056b3; }
         """)
@@ -176,23 +178,45 @@ class ConnectionCard(QWidget):
         
         layout.addLayout(buttons_layout)
         
-        # Style de la carte
-        self.setStyleSheet("""
+        # Style de la carte (sera utilisé uniquement si pas dans un conteneur)
+        default_style = """
             ConnectionCard {
-                background-color: #343a40;
-                border: 1px solid #495057;
-                border-radius: 8px;
-                margin: 4px;
+                background-color: #3a3d42;
+                border: 2px solid #4a4d52;
+                border-radius: 12px;
+                margin: 6px;
+                padding: 2px;
             }
             ConnectionCard:hover {
                 border-color: #6c757d;
-                background-color: #3d4449;
+                background-color: #42464b;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
             }
-        """)
+        """
         
         self.setLayout(layout)
-        self.setFixedWidth(280)
-        self.setMinimumHeight(120)
+        self.setFixedWidth(300)  # Un peu plus large
+        self.setMinimumHeight(140)  # Un peu plus haut
+        
+        # Appliquer le style par défaut
+        self.apply_default_style()
+    
+    def apply_default_style(self):
+        """Applique le style par défaut"""
+        self.setStyleSheet("""
+            ConnectionCard {
+                background-color: #3a3d42;
+                border: 2px solid #4a4d52;
+                border-radius: 12px;
+                margin: 8px;
+                padding: 4px;
+            }
+            ConnectionCard:hover {
+                border-color: #6c757d;
+                background-color: #42464b;
+                box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4);
+            }
+        """)
     
     def toggle_connection(self):
         """Basculer entre connexion/déconnexion"""
@@ -219,10 +243,11 @@ class ConnectionCard(QWidget):
                 background-color: #dc3545;
                 color: white;
                 border: none;
-                padding: 6px 12px;
+                padding: 4px 8px;
                 border-radius: 3px;
-                font-size: 10px;
+                font-size: 9px;
                 font-weight: 600;
+                min-width: 65px;
             }
             QPushButton:hover { background-color: #c82333; }
         """)
@@ -281,10 +306,6 @@ class ConnectionCard(QWidget):
             self.add_info_line("🖥️", f"ESXi: {self.connection_info.get('hosts_count', 'N/A')}")
             self.add_info_line("📊", f"Clusters: {self.connection_info.get('clusters_count', 'N/A')}")
         
-        elif self.service_type == "aws":
-            self.add_info_line("🌐", f"Région: {self.connection_info.get('region', 'N/A')}")
-            self.add_info_line("💻", f"Instances: {self.connection_info.get('instances_count', 'N/A')}")
-        
         # Ajuster la hauteur
         self.info_frame.setFixedHeight(self.info_layout.sizeHint().height() + 16)
     
@@ -329,57 +350,51 @@ class ConnectionManager(QWidget):
         self.setup_services()
     
     def init_ui(self):
-        """Interface principale"""
+        """Interface principale - VERSION COMPACTE"""
         layout = QVBoxLayout()
-        layout.setContentsMargins(15, 15, 15, 15)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 8, 10, 8)  # Marges très réduites
+        layout.setSpacing(4)  # Espacement minimal
         
-        # Titre
+        # Titre compact
         title = QLabel("🔗 Gestionnaire de Connexions")
         title.setStyleSheet("""
-            font-size: 16px; 
+            font-size: 14px; 
             font-weight: bold; 
             color: #ffffff;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
         """)
         layout.addWidget(title)
         
-        # Zone scrollable pour les cartes
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: none;
+        # Conteneur des cartes TRÈS COMPACT
+        cards_container = QWidget()
+        cards_container.setStyleSheet("""
+            QWidget {
                 background-color: transparent;
+                border: none;
             }
         """)
         
-        # Conteneur des cartes
-        cards_container = QWidget()
         self.cards_layout = QHBoxLayout()
-        self.cards_layout.setContentsMargins(0, 0, 0, 0)
-        self.cards_layout.setSpacing(12)
+        self.cards_layout.setContentsMargins(5, 5, 5, 5)  # Marges minimales
+        self.cards_layout.setSpacing(15)  # Espacement réduit entre cartes
         self.cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         cards_container.setLayout(self.cards_layout)
         
-        scroll_area.setWidget(cards_container)
-        layout.addWidget(scroll_area)
+        layout.addWidget(cards_container)
         
-        # Barre d'actions globales
+        # Barre d'actions COMPACTE
         actions_layout = QHBoxLayout()
-        actions_layout.setSpacing(8)
+        actions_layout.setSpacing(6)
         
-        refresh_btn = QPushButton("🔄 Actualiser tout")
+        refresh_btn = QPushButton("🔄 Actualiser")
         refresh_btn.setStyleSheet("""
             QPushButton {
                 background-color: #17a2b8;
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-size: 11px;
+                padding: 4px 8px;
+                border-radius: 3px;
+                font-size: 10px;
                 font-weight: 600;
             }
             QPushButton:hover { background-color: #138496; }
@@ -389,14 +404,17 @@ class ConnectionManager(QWidget):
         
         actions_layout.addStretch()
         
-        # Indicateur global
+        # Indicateur global compact
         self.global_status = QLabel("💤 Aucune connexion active")
-        self.global_status.setStyleSheet("font-size: 11px; color: #6c757d; font-style: italic;")
+        self.global_status.setStyleSheet("font-size: 10px; color: #6c757d; font-style: italic;")
         actions_layout.addWidget(self.global_status)
         
         layout.addLayout(actions_layout)
         
         self.setLayout(layout)
+        
+        # Limiter la hauteur totale du widget
+        self.setMaximumHeight(180)
     
     def setup_services(self):
         """Configure les services disponibles"""
@@ -412,13 +430,8 @@ class ConnectionManager(QWidget):
                 'type': 'vsphere', 
                 'icon': '☁️',
                 'description': 'Infrastructure VMware'
-            },
-            {
-                'name': 'AWS EC2',
-                'type': 'aws',
-                'icon': '🌐',
-                'description': 'Amazon Web Services'
             }
+            # AWS supprimé comme demandé
         ]
         
         for service_config in services:

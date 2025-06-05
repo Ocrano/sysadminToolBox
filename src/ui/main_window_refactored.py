@@ -96,8 +96,9 @@ class MainWindowRefactored(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        # === CONNECTION MANAGER ===
+        # === CONNECTION MANAGER COMPACT ===
         self.connection_manager = ConnectionManager()
+        self.connection_manager.setMaximumHeight(200)  # Hauteur maximale limitée
         
         # Connecter les signaux du Connection Manager
         self.connection_manager.connection_status_changed.connect(self.handle_connection_manager_request)
@@ -108,22 +109,22 @@ class MainWindowRefactored(QMainWindow):
         # === SÉPARATEUR ===
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("color: #555; margin: 4px 0px;")
+        separator.setStyleSheet("color: #555; margin: 0px;")  # Plus de margin
         layout.addWidget(separator)
         
-        # === VUE D'ENSEMBLE DES SERVICES ===
+        # === VUE D'ENSEMBLE DES SERVICES (PLUS GRANDE) ===
         overview_widget = self.create_services_overview()
-        layout.addWidget(overview_widget)
+        layout.addWidget(overview_widget, 1)  # Prend tout l'espace restant
         
         tab.setLayout(layout)
         self.tabs.addTab(tab, "🏠 Dashboard")
 
     def create_services_overview(self):
-        """Vue d'ensemble des services connectés"""
+        """Vue d'ensemble des services"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(15, 10, 15, 15)
-        layout.setSpacing(12)
+        layout.setContentsMargins(15, 5, 15, 15)  # Marges réduites en haut
+        layout.setSpacing(8)  # Espacement réduit
         
         # Titre
         title = SectionHeader("📊 Vue d'ensemble des services", "", VersionLabel(self.VERSION, self.DEVELOPER))
@@ -135,11 +136,11 @@ class MainWindowRefactored(QMainWindow):
         # === MÉTRIQUES GLOBALES ===
         metrics_widget = QWidget()
         metrics_layout = QVBoxLayout()
-        metrics_layout.setContentsMargins(10, 10, 10, 10)
-        metrics_layout.setSpacing(8)
+        metrics_layout.setContentsMargins(10, 5, 10, 10)  # Marges réduites
+        metrics_layout.setSpacing(6)  # Espacement réduit
         
         metrics_title = QLabel("📈 Métriques en temps réel")
-        metrics_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #ffffff; margin-bottom: 8px;")
+        metrics_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #ffffff; margin-bottom: 6px;")
         metrics_layout.addWidget(metrics_title)
         
         self.global_metrics = MetricsDisplay()
@@ -157,7 +158,7 @@ class MainWindowRefactored(QMainWindow):
         # === LOGS SYSTÈME ===
         logs_widget = QWidget()
         logs_layout = QVBoxLayout()
-        logs_layout.setContentsMargins(5, 10, 10, 10)
+        logs_layout.setContentsMargins(5, 5, 10, 10)  # Marges réduites
         logs_layout.setSpacing(5)
         
         # En-tête avec contrôles
@@ -442,8 +443,6 @@ class MainWindowRefactored(QMainWindow):
             self.configure_proxmox()
         elif service_name == "VMware vSphere":
             QMessageBox.information(self, "vSphere", "Configuration vSphere pas encore disponible.")
-        elif service_name == "AWS EC2":
-            QMessageBox.information(self, "AWS", "Configuration AWS pas encore disponible.")
         else:
             QMessageBox.warning(self, "Service inconnu", f"Configuration de {service_name} non supportée.")
     

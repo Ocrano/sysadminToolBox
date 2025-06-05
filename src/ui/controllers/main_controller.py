@@ -199,16 +199,6 @@ class MainController(QObject):
                 # TODO: Déconnexion vSphere
                 return True, "vSphere déconnecté"
         
-        elif service_name == "AWS EC2":
-            if connect:
-                # TODO: Implémenter la connexion AWS
-                log_warning("Connexion AWS pas encore implémentée", "Controller")
-                self.service_connection_changed.emit(service_name, False, {'error': 'Non implémenté'})
-                return False, "AWS pas encore supporté"
-            else:
-                # TODO: Déconnexion AWS
-                return True, "AWS déconnecté"
-        
         else:
             log_error(f"Service inconnu: {service_name}", "Controller")
             return False, f"Service {service_name} non supporté"
