@@ -120,15 +120,45 @@ class MainWindowRefactored(QMainWindow):
         self.tabs.addTab(tab, "🏠 Dashboard")
 
     def create_services_overview(self):
-        """Vue d'ensemble des services"""
+        """Vue d'ensemble des services - SANS ESPACES"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(15, 5, 15, 15)  # Marges réduites en haut
-        layout.setSpacing(8)  # Espacement réduit
+        layout.setContentsMargins(0, 0, 0, 0)  # AUCUNE MARGE
+        layout.setSpacing(0)  # AUCUN ESPACEMENT
         
-        # Titre
-        title = SectionHeader("📊 Vue d'ensemble des services", "", VersionLabel(self.VERSION, self.DEVELOPER))
-        layout.addWidget(title)
+        # === TITRE ULTRA-COMPACT ===
+        title_container = QWidget()
+        title_container.setFixedHeight(25)  # Hauteur fixe minimale
+        title_container.setStyleSheet("background-color: transparent; margin: 0px; padding: 0px;")
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(15, 5, 15, 5)  # Marges minimales
+        title_layout.setSpacing(0)
+        
+        title_label = QLabel("📊 Vue d'ensemble des services")
+        title_label.setStyleSheet("""
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #ffffff;
+            padding: 0px;
+            margin: 0px;
+            background-color: transparent;
+        """)
+        title_layout.addWidget(title_label)
+        
+        title_layout.addStretch()
+        
+        version_label = VersionLabel(self.VERSION, self.DEVELOPER)
+        title_layout.addWidget(version_label)
+        
+        title_container.setLayout(title_layout)
+        layout.addWidget(title_container)
+        
+        # === CONTENU PRINCIPAL ===
+        content_widget = QWidget()
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(15, 10, 15, 15)
+        content_layout.setSpacing(8)
         
         # Conteneur principal avec splitter
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -136,8 +166,8 @@ class MainWindowRefactored(QMainWindow):
         # === MÉTRIQUES GLOBALES ===
         metrics_widget = QWidget()
         metrics_layout = QVBoxLayout()
-        metrics_layout.setContentsMargins(10, 5, 10, 10)  # Marges réduites
-        metrics_layout.setSpacing(6)  # Espacement réduit
+        metrics_layout.setContentsMargins(10, 5, 10, 10)
+        metrics_layout.setSpacing(6)
         
         metrics_title = QLabel("📈 Métriques en temps réel")
         metrics_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #ffffff; margin-bottom: 6px;")
@@ -158,13 +188,23 @@ class MainWindowRefactored(QMainWindow):
         # === LOGS SYSTÈME ===
         logs_widget = QWidget()
         logs_layout = QVBoxLayout()
-        logs_layout.setContentsMargins(5, 5, 10, 10)  # Marges réduites
+        logs_layout.setContentsMargins(5, 5, 10, 10)
         logs_layout.setSpacing(5)
         
         # En-tête avec contrôles
         logs_header_layout = QHBoxLayout()
-        logs_title = SectionHeader("📋 Activité système", "")
-        logs_header_layout.addWidget(logs_title)
+        logs_header_layout.setContentsMargins(0, 0, 0, 0)
+        logs_header_layout.setSpacing(0)
+        
+        logs_title_label = QLabel("📋 Activité système")
+        logs_title_label.setStyleSheet("""
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #ffffff;
+            padding: 0px;
+            margin: 0px;
+        """)
+        logs_header_layout.addWidget(logs_title_label)
         logs_header_layout.addStretch()
         
         # Mini panneau de contrôle
@@ -187,7 +227,10 @@ class MainWindowRefactored(QMainWindow):
         main_splitter.setStretchFactor(0, 30)
         main_splitter.setStretchFactor(1, 70)
         
-        layout.addWidget(main_splitter)
+        content_layout.addWidget(main_splitter)
+        content_widget.setLayout(content_layout)
+        
+        layout.addWidget(content_widget)
         
         widget.setLayout(layout)
         return widget
@@ -251,15 +294,45 @@ class MainWindowRefactored(QMainWindow):
         self.tabs.addTab(tab, "⚙️ Paramètres")
 
     def create_tools_tab(self):
-        """Onglet Tools - VERSION SIMPLIFIÉE (plus de barre de connexion)"""
+        """Onglet Tools - VERSION SIMPLIFIÉE SANS ESPACES"""
         tab = QWidget()
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(0, 0, 0, 0)  # AUCUNE MARGE
+        main_layout.setSpacing(0)  # AUCUN ESPACEMENT
         
-        # En-tête simple
-        header = SectionHeader("Outils Proxmox", "🛠️", VersionLabel(self.VERSION, self.DEVELOPER))
-        main_layout.addWidget(header)
+        # === TITRE ULTRA-COMPACT ===
+        title_container = QWidget()
+        title_container.setFixedHeight(25)  # Hauteur fixe minimale
+        title_container.setStyleSheet("background-color: transparent; margin: 0px; padding: 0px;")
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(15, 5, 15, 5)  # Marges minimales
+        title_layout.setSpacing(0)
+        
+        title_label = QLabel("🛠️ Outils Proxmox")
+        title_label.setStyleSheet("""
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #ffffff;
+            padding: 0px;
+            margin: 0px;
+            background-color: transparent;
+        """)
+        title_layout.addWidget(title_label)
+        
+        title_layout.addStretch()
+        
+        version_label = VersionLabel(self.VERSION, self.DEVELOPER)
+        title_layout.addWidget(version_label)
+        
+        title_container.setLayout(title_layout)
+        main_layout.addWidget(title_container)
+        
+        # === CONTENU PRINCIPAL ===
+        content_widget = QWidget()
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(8, 8, 8, 8)
+        content_layout.setSpacing(8)
         
         # === SPLITTER ACTIONS / LOGS ===
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -277,20 +350,31 @@ class MainWindowRefactored(QMainWindow):
         main_splitter.setStretchFactor(0, 35)
         main_splitter.setStretchFactor(1, 65)
         
-        main_layout.addWidget(main_splitter)
+        content_layout.addWidget(main_splitter)
+        content_widget.setLayout(content_layout)
+        
+        main_layout.addWidget(content_widget)
         tab.setLayout(main_layout)
         
         self.tabs.addTab(tab, "🛠️ Proxmox")
 
     def create_actions_section(self):
-        """Section des actions Proxmox"""
+        """Section des actions Proxmox - COMPACTE"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(5)
+        layout.setContentsMargins(5, 0, 5, 5)  # Marges réduites
+        layout.setSpacing(3)  # Espacement minimal
         
-        title = SectionHeader("Actions disponibles", "⚡")
-        layout.addWidget(title)
+        # Titre compact
+        title_label = QLabel("⚡ Actions disponibles")
+        title_label.setStyleSheet("""
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #ffffff;
+            padding: 5px 0px;
+            margin: 0px;
+        """)
+        layout.addWidget(title_label)
         
         # === GRILLE D'ACTIONS AVEC BOUTONS ===
         self.actions_grid = ActionGrid()
@@ -333,16 +417,26 @@ class MainWindowRefactored(QMainWindow):
         return widget
 
     def create_logs_section(self):
-        """Section des logs avec contrôles"""
+        """Section des logs avec contrôles - COMPACTE"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(5)
+        layout.setContentsMargins(5, 0, 5, 5)  # Marges réduites
+        layout.setSpacing(3)  # Espacement minimal
         
         # En-tête avec contrôles
         header_layout = QHBoxLayout()
-        title = SectionHeader("Logs Proxmox", "📋")
-        header_layout.addWidget(title)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(0)
+        
+        title_label = QLabel("📋 Logs Proxmox")
+        title_label.setStyleSheet("""
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #ffffff;
+            padding: 5px 0px;
+            margin: 0px;
+        """)
+        header_layout.addWidget(title_label)
         header_layout.addStretch()
         
         # Panneau de contrôle des logs

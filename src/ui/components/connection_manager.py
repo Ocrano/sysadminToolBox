@@ -165,11 +165,10 @@ class ConnectionCard(QWidget):
                 background-color: #007bff;
                 color: white;
                 border: none;
-                padding: 8px 14px;
-                border-radius: 4px;
-                font-size: 11px;
+                padding: 6px 12px;
+                border-radius: 3px;
+                font-size: 10px;
                 font-weight: 600;
-                min-height: 30px;
             }
             QPushButton:hover { background-color: #0056b3; }
         """)
@@ -247,7 +246,10 @@ class ConnectionCard(QWidget):
                 border-radius: 3px;
                 font-size: 9px;
                 font-weight: 600;
-                min-width: 65px;
+                min-width: 70px;
+                max-width: 70px;
+                min-height: 24px;
+                max-height: 24px;
             }
             QPushButton:hover { background-color: #c82333; }
         """)
@@ -418,21 +420,32 @@ class ConnectionManager(QWidget):
     
     def setup_services(self):
         """Configure les services disponibles"""
+        import os
+        
+    # Obtenir le chemin absolu du dossier contenant le script main.py
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
+
         services = [
-            {
-                'name': 'Proxmox VE',
-                'type': 'proxmox',
-                'icon': '🖥️',
-                'description': 'Gestionnaire de virtualisation'
-            },
-            {
-                'name': 'VMware vSphere',
-                'type': 'vsphere', 
-                'icon': '☁️',
-                'description': 'Infrastructure VMware'
-            }
-            # AWS supprimé comme demandé
-        ]
+                {
+                    'name': 'Proxmox VE',
+                    'type': 'proxmox',
+                    'icon': os.path.join(base_path, 'ressources', 'icons', 'proxmox.png'),
+                    'description': 'Gestionnaire de virtualisation'
+                },
+                {
+                    'name': 'VMware vSphere',
+                    'type': 'vsphere',
+                    'icon': os.path.join(base_path, 'ressources', 'icons', 'vsphere.png'),
+                    'description': 'Infrastructure VMware'
+                }
+                ]       
+        
+        # Debug : afficher les chemins construits
+        for service in services:
+            print(f"Service: {service['name']}")
+            print(f"Chemin icône: {service['icon']}")
+            print(f"Fichier existe: {os.path.exists(service['icon'])}")
+            print("---")
         
         for service_config in services:
             card = ConnectionCard(service_config)

@@ -8,7 +8,9 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-
+    
+print(f"Répertoire de travail: {os.getcwd()}")
+print(f"Fichiers dans ressources/icons/: {os.listdir('ressources/icons/')}")
 # Import des services existants (avec gestion d'erreur)
 try:
     from src.handlers.git_manager import GitLabManager as GitManager
