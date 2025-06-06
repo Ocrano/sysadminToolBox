@@ -1,7 +1,7 @@
 # src/ui/components/connection_manager.py
 """
 Connection Manager - Gestionnaire centralisé des connexions
-Supporte Proxmox, vSphere, et futures plateformes
+VERSION FINALE DÉFINITIVE: Icônes parfaites + espacement optimal
 """
 
 from PyQt6.QtWidgets import (
@@ -9,8 +9,10 @@ from PyQt6.QtWidgets import (
     QLabel, QComboBox, QProgressBar, QFrame, QScrollArea
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtGui import QPixmap, QPainter, QColor
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QIcon
 import time
+import os
+from pathlib import Path
 
 
 class ConnectionStatusIndicator(QWidget):
@@ -64,8 +66,112 @@ class ConnectionStatusIndicator(QWidget):
         painter.drawEllipse(0, 0, self.size, self.size)
 
 
+class IconManager:
+    """Gestionnaire d'icônes avec fallbacks automatiques"""
+    
+    @staticmethod
+    def get_service_icon(service_name, icon_path=None):
+        """
+        Récupère l'icône d'un service avec fallback automatique
+        
+        Args:
+            service_name (str): Nom du service
+            icon_path (str): Chemin optionnel vers l'icône
+            
+        Returns:
+            str: Emoji ou chemin vers l'icône
+        """
+        # Dictionnaire des icônes de fallback (emojis)
+        fallback_icons = {
+            'Proxmox VE': '🟠',
+            'VMware vSphere': '🔵', 
+            'Docker': '🐳',
+            'Kubernetes': '☸️',
+            'OpenStack': '☁️',
+            'Hyper-V': '🏢',
+            'XenServer': '🔷',
+            'QEMU/KVM': '🐧'
+        }
+        
+        # Si un chemin d'icône est fourni, vérifier s'il existe
+        if icon_path and os.path.exists(icon_path):
+            return icon_path
+        
+        # Sinon, utiliser l'emoji de fallback
+        return fallback_icons.get(service_name, '🖥️')
+    
+    @staticmethod
+    def find_icon_in_project(service_type):
+        """
+        Recherche une icône dans le projet pour un type de service
+        
+        Args:
+            service_type (str): Type de service (proxmox, vsphere, etc.)
+            
+        Returns:
+            str: Chemin vers l'icône ou None
+        """
+        # Déterminer le répertoire racine du projet
+        current_file = Path(__file__)
+        
+        # Remonter depuis src/ui/components/ vers la racine
+        project_root = current_file.parent.parent.parent.parent
+        
+        # Possibles emplacements d'icônes
+        possible_locations = [
+            project_root / "ressources" / "icons",  # Votre structure actuelle
+            project_root / "resources" / "icons",   # Structure standard
+            project_root / "assets" / "icons",      # Alternative commune
+            project_root / "icons",                 # Directement à la racine
+        ]
+        
+        # Extensions supportées
+        extensions = ['.png', '.ico', '.svg', '.jpg', '.jpeg']
+        
+        for location in possible_locations:
+            if location.exists():
+                for ext in extensions:
+                    icon_file = location / f"{service_type}{ext}"
+                    if icon_file.exists():
+                        return str(icon_file)
+        
+        return None
+    
+    @staticmethod
+    def debug_icon_paths():
+        """Debug: affiche tous les chemins testés"""
+        current_file = Path(__file__)
+        project_root = current_file.parent.parent.parent.parent
+        
+        print("=== DEBUG ICON PATHS ===")
+        print(f"Fichier actuel: {current_file}")
+        print(f"Racine projet: {project_root}")
+        
+        # Vérifier chaque emplacement possible
+        possible_locations = [
+            "ressources/icons",
+            "resources/icons", 
+            "assets/icons",
+            "icons"
+        ]
+        
+        for loc in possible_locations:
+            full_path = project_root / loc
+            exists = full_path.exists()
+            print(f"  {loc}: {'✅ EXISTS' if exists else '❌ NOT FOUND'} ({full_path})")
+            
+            if exists:
+                try:
+                    files = list(full_path.iterdir())
+                    print(f"    Fichiers: {[f.name for f in files if f.is_file()]}")
+                except:
+                    print(f"    Erreur lecture dossier")
+        
+        print("========================")
+
+
 class ConnectionCard(QWidget):
-    """Carte de connexion pour chaque service"""
+    """Carte de connexion pour chaque service - VERSION FINALE OPTIMISÉE"""
     
     connection_requested = pyqtSignal(str)  # service_name
     disconnection_requested = pyqtSignal(str)
@@ -75,7 +181,12 @@ class ConnectionCard(QWidget):
         super().__init__()
         self.service_name = service_config['name']
         self.service_type = service_config['type']
-        self.service_icon = service_config['icon']
+        
+        # CORRECTION: Utiliser le gestionnaire d'icônes
+        specified_icon = service_config.get('icon')
+        auto_found_icon = IconManager.find_icon_in_project(self.service_type)
+        self.service_icon = IconManager.get_service_icon(self.service_name, specified_icon or auto_found_icon)
+        
         self.service_description = service_config['description']
         
         self.is_connected = False
@@ -83,19 +194,133 @@ class ConnectionCard(QWidget):
         
         self.init_ui()
     
+    def create_perfect_icon(self, icon_path_or_emoji, base_size=32):
+        """
+        Crée une icône parfaitement dimensionnée avec tailles spécifiques par service
+        
+        Args:
+            icon_path_or_emoji: Chemin vers l'icône ou emoji
+            base_size: Taille de base en pixels
+        
+        Returns:
+            QLabel avec l'icône parfaitement dimensionnée
+        """
+        # TAILLES SPÉCIFIQUES PAR SERVICE
+        service_sizes = {
+            "vsphere": 40,    # vSphere plus grand
+            "proxmox": 32,    # Proxmox taille normale
+            "docker": 32,     # Docker normal
+            "kubernetes": 32  # Kubernetes normal
+        }
+        
+        # Déterminer la taille finale
+        final_size = service_sizes.get(self.service_type, base_size)
+        
+        print(f"🎯 Service: {self.service_type} -> Taille: {final_size}px")
+        
+        icon_label = QLabel()
+        
+        if isinstance(icon_path_or_emoji, str) and icon_path_or_emoji.endswith(('.png', '.ico', '.svg', '.jpg', '.jpeg')):
+            try:
+                # Charger l'image originale
+                original_pixmap = QPixmap(icon_path_or_emoji)
+                
+                if not original_pixmap.isNull():
+                    original_width = original_pixmap.width()
+                    original_height = original_pixmap.height()
+                    
+                    print(f"📏 Image originale: {original_width}x{original_height}")
+                    
+                    # Redimensionner directement à la taille finale
+                    scaled_pixmap = original_pixmap.scaled(
+                        final_size, final_size,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    
+                    # Créer un canvas carré de la taille finale
+                    canvas = QPixmap(final_size, final_size)
+                    canvas.fill(QColor(0, 0, 0, 0))  # Transparent
+                    
+                    # Centrer l'image redimensionnée
+                    painter = QPainter(canvas)
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+                    
+                    x = (final_size - scaled_pixmap.width()) // 2
+                    y = (final_size - scaled_pixmap.height()) // 2
+                    painter.drawPixmap(x, y, scaled_pixmap)
+                    painter.end()
+                    
+                    icon_label.setPixmap(canvas)
+                    
+                    print(f"✅ Icône créée: {scaled_pixmap.width()}x{scaled_pixmap.height()} centrée dans {final_size}x{final_size}")
+                    
+                else:
+                    print(f"❌ Pixmap null pour {icon_path_or_emoji}")
+                    raise Exception("Pixmap null")
+                    
+            except Exception as e:
+                print(f"❌ Erreur chargement icône {icon_path_or_emoji}: {e}")
+                # Fallback vers emoji
+                return self.create_emoji_icon("🖥️", final_size)
+        else:
+            # C'est un emoji ou texte
+            print(f"😀 Emoji détecté: {icon_path_or_emoji}")
+            return self.create_emoji_icon(icon_path_or_emoji, final_size)
+        
+        # Standardiser le conteneur à la taille finale
+        icon_label.setFixedSize(final_size, final_size)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setStyleSheet("""
+            QLabel {
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+        
+        return icon_label
+
+    def create_emoji_icon(self, emoji_text, size=32):
+        """Crée une icône emoji parfaitement dimensionnée"""
+        label = QLabel(emoji_text)
+        
+        # Calculer la taille de police appropriée selon la taille
+        font_size = max(12, int(size * 0.65))  # 65% de la taille du conteneur
+        
+        label.setStyleSheet(f"""
+            QLabel {{
+                font-size: {font_size}px;
+                font-weight: bold;
+                color: #ffffff;
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+            }}
+        """)
+        
+        label.setFixedSize(size, size)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        print(f"🎭 Emoji {emoji_text} créé avec taille {size}px, police {font_size}px")
+        
+        return label
+    
     def init_ui(self):
-        """Interface de la carte"""
+        """Interface de la carte - HAUTEUR OPTIMISÉE"""
         layout = QVBoxLayout()
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
         
         # === EN-TÊTE DE LA CARTE ===
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(12)
         
-        # Icône + Nom
-        icon_label = QLabel(self.service_icon)
-        icon_label.setStyleSheet("font-size: 20px;")
+        # Icône + Nom - MÉTHODE PARFAITE
+        icon_label = self.create_perfect_icon(self.service_icon)
         header_layout.addWidget(icon_label)
         
         title_layout = QVBoxLayout()
@@ -177,25 +402,10 @@ class ConnectionCard(QWidget):
         
         layout.addLayout(buttons_layout)
         
-        # Style de la carte (sera utilisé uniquement si pas dans un conteneur)
-        default_style = """
-            ConnectionCard {
-                background-color: #3a3d42;
-                border: 2px solid #4a4d52;
-                border-radius: 12px;
-                margin: 6px;
-                padding: 2px;
-            }
-            ConnectionCard:hover {
-                border-color: #6c757d;
-                background-color: #42464b;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
-            }
-        """
-        
         self.setLayout(layout)
-        self.setFixedWidth(300)  # Un peu plus large
-        self.setMinimumHeight(140)  # Un peu plus haut
+        self.setFixedWidth(320)  # Largeur adaptée
+        self.setMinimumHeight(150)  # Hauteur RÉDUITE pour optimiser l'espace
+        self.setMaximumHeight(165)  # Hauteur max RÉDUITE
         
         # Appliquer le style par défaut
         self.apply_default_style()
@@ -339,7 +549,7 @@ class ConnectionCard(QWidget):
 
 
 class ConnectionManager(QWidget):
-    """Gestionnaire principal des connexions"""
+    """Gestionnaire principal des connexions - VERSION FINALE DÉFINITIVE"""
     
     # Signaux pour communiquer avec MainWindow
     connection_status_changed = pyqtSignal(str, bool, dict)  # service, connected, info
@@ -348,14 +558,18 @@ class ConnectionManager(QWidget):
     def __init__(self):
         super().__init__()
         self.service_cards = {}
+        
+        # DEBUG: Afficher les chemins testés
+        IconManager.debug_icon_paths()
+        
         self.init_ui()
         self.setup_services()
     
     def init_ui(self):
-        """Interface principale - VERSION COMPACTE"""
+        """Interface principale - ESPACEMENT FINAL PARFAIT"""
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 8, 10, 8)  # Marges très réduites
-        layout.setSpacing(4)  # Espacement minimal
+        layout.setContentsMargins(10, 8, 10, 25)  # Marge bas MAXIMISÉE pour libérer l'espace
+        layout.setSpacing(8)  # Espacement optimal
         
         # Titre compact
         title = QLabel("🔗 Gestionnaire de Connexions")
@@ -363,11 +577,11 @@ class ConnectionManager(QWidget):
             font-size: 14px; 
             font-weight: bold; 
             color: #ffffff;
-            margin-bottom: 2px;
+            margin-bottom: 6px;
         """)
         layout.addWidget(title)
         
-        # Conteneur des cartes TRÈS COMPACT
+        # Conteneur des cartes avec marges maximisées
         cards_container = QWidget()
         cards_container.setStyleSheet("""
             QWidget {
@@ -377,16 +591,17 @@ class ConnectionManager(QWidget):
         """)
         
         self.cards_layout = QHBoxLayout()
-        self.cards_layout.setContentsMargins(5, 5, 5, 5)  # Marges minimales
-        self.cards_layout.setSpacing(15)  # Espacement réduit entre cartes
+        self.cards_layout.setContentsMargins(5, 10, 5, 18)  # Marge bas MAXIMISÉE
+        self.cards_layout.setSpacing(20)
         self.cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         cards_container.setLayout(self.cards_layout)
         
         layout.addWidget(cards_container)
         
-        # Barre d'actions COMPACTE
+        # Barre d'actions avec séparation MAXIMALE
         actions_layout = QHBoxLayout()
         actions_layout.setSpacing(6)
+        actions_layout.setContentsMargins(0, 12, 0, 0)  # Marge haute AUGMENTÉE
         
         refresh_btn = QPushButton("🔄 Actualiser")
         refresh_btn.setStyleSheet("""
@@ -414,38 +629,23 @@ class ConnectionManager(QWidget):
         layout.addLayout(actions_layout)
         
         self.setLayout(layout)
-        
-        # Limiter la hauteur totale du widget
-        self.setMaximumHeight(180)
+        self.setMaximumHeight(250)  # Hauteur FINALE optimisée
+        self.setMinimumHeight(250)  # Hauteur minimale fixée
     
     def setup_services(self):
         """Configure les services disponibles"""
-        import os
-        
-    # Obtenir le chemin absolu du dossier contenant le script main.py
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-
         services = [
-                {
-                    'name': 'Proxmox VE',
-                    'type': 'proxmox',
-                    'icon': os.path.join(base_path, 'ressources', 'icons', 'proxmox.png'),
-                    'description': 'Gestionnaire de virtualisation'
-                },
-                {
-                    'name': 'VMware vSphere',
-                    'type': 'vsphere',
-                    'icon': os.path.join(base_path, 'ressources', 'icons', 'vsphere.png'),
-                    'description': 'Infrastructure VMware'
-                }
-                ]       
-        
-        # Debug : afficher les chemins construits
-        for service in services:
-            print(f"Service: {service['name']}")
-            print(f"Chemin icône: {service['icon']}")
-            print(f"Fichier existe: {os.path.exists(service['icon'])}")
-            print("---")
+            {
+                'name': 'Proxmox VE',
+                'type': 'proxmox',
+                'description': 'Gestionnaire de virtualisation'
+            },
+            {
+                'name': 'VMware vSphere',
+                'type': 'vsphere',
+                'description': 'Infrastructure VMware'
+            }
+        ]
         
         for service_config in services:
             card = ConnectionCard(service_config)
@@ -464,8 +664,6 @@ class ConnectionManager(QWidget):
         card = self.service_cards.get(service_name)
         if card:
             card.set_connecting()
-            
-            # Émettre le signal vers MainWindow pour déclencher la vraie connexion
             self.connection_status_changed.emit(service_name, True, {})
     
     def handle_disconnection_request(self, service_name):
@@ -537,14 +735,12 @@ class ConnectionManager(QWidget):
         """Actualise toutes les connexions actives"""
         connected_services = self.get_connected_services()
         if connected_services:
-            # Émettre un signal pour demander la mise à jour
             for service_name in connected_services:
                 self.connection_status_changed.emit(service_name, True, {'refresh': True})
         else:
-            # Aucune connexion active
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.information(self, "Actualisation", "Aucune connexion active à actualiser.")
 
 
 # Export
-__all__ = ['ConnectionManager', 'ConnectionCard', 'ConnectionStatusIndicator']
+__all__ = ['ConnectionManager', 'ConnectionCard', 'ConnectionStatusIndicator', 'IconManager']
