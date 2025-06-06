@@ -135,7 +135,7 @@ class MainWindowRefactored(QMainWindow):
         title_layout.setContentsMargins(15, 5, 15, 5)  # Marges minimales
         title_layout.setSpacing(0)
         
-        title_label = QLabel("📊 Vue d'ensemble des services")
+        title_label = QLabel("Vue d'ensemble des services")
         title_label.setStyleSheet("""
             font-size: 13px; 
             font-weight: bold; 
@@ -169,7 +169,7 @@ class MainWindowRefactored(QMainWindow):
         metrics_layout.setContentsMargins(10, 5, 10, 10)
         metrics_layout.setSpacing(6)
         
-        metrics_title = QLabel("📈 Métriques en temps réel")
+        metrics_title = QLabel("Métriques en temps réel")
         metrics_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #ffffff; margin-bottom: 6px;")
         metrics_layout.addWidget(metrics_title)
         

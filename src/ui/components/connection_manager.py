@@ -1,7 +1,7 @@
 # src/ui/components/connection_manager.py
 """
 Connection Manager - Gestionnaire centralisé des connexions
-VERSION FINALE DÉFINITIVE: Icônes parfaites + espacement optimal
+VERSION FINALE SUBTILE: Cartes avec fonds colorés subtils et espacement
 """
 
 from PyQt6.QtWidgets import (
@@ -171,7 +171,7 @@ class IconManager:
 
 
 class ConnectionCard(QWidget):
-    """Carte de connexion pour chaque service - VERSION FINALE OPTIMISÉE"""
+    """Carte de connexion pour chaque service - FOND SUBTIL ET ESPACEMENT"""
     
     connection_requested = pyqtSignal(str)  # service_name
     disconnection_requested = pyqtSignal(str)
@@ -181,6 +181,31 @@ class ConnectionCard(QWidget):
         super().__init__()
         self.service_name = service_config['name']
         self.service_type = service_config['type']
+        
+        # COULEURS SUBTILES PAR SERVICE (pour les fonds uniquement)
+         # COULEURS TRÈS VISIBLES (VERSION TEST)
+        self.service_colors = {
+            "proxmox": {
+                "background": "#4a2c1a",        # Orange foncé TRÈS visible
+                "border": "#ff6b35",            # Bordure orange vive
+                "hover_bg": "#5a3422",          # Hover orange
+                "hover_border": "#ff8f65"       # Bordure hover
+            },
+            "vsphere": {
+                "background": "#1a2938",        # Bleu foncé TRÈS visible
+                "border": "#1e88e5",            # Bordure bleue vive
+                "hover_bg": "#243242",          # Hover bleu
+                "hover_border": "#42a5f5"       # Bordure hover
+            }
+        }
+        
+        # Récupérer les couleurs du service (fallback vers couleurs neutres)
+        self.colors = self.service_colors.get(self.service_type, {
+            "background": "rgba(108, 117, 125, 0.08)",
+            "border": "rgba(108, 117, 125, 0.2)",
+            "hover_bg": "rgba(108, 117, 125, 0.12)",
+            "hover_border": "rgba(108, 117, 125, 0.3)"
+        })
         
         # CORRECTION: Utiliser le gestionnaire d'icônes
         specified_icon = service_config.get('icon')
@@ -310,10 +335,10 @@ class ConnectionCard(QWidget):
         return label
     
     def init_ui(self):
-        """Interface de la carte - HAUTEUR OPTIMISÉE"""
+        """Interface de la carte - FOND SUBTIL ET BOUTONS NORMAUX"""
         layout = QVBoxLayout()
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(15, 15, 15, 15)  # Marges internes généreuses
+        layout.setSpacing(10)
         
         # === EN-TÊTE DE LA CARTE ===
         header_layout = QHBoxLayout()
@@ -348,7 +373,7 @@ class ConnectionCard(QWidget):
         self.info_frame.setFixedHeight(0)  # Caché par défaut
         self.info_frame.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 0.08);
+                background-color: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 6px;
                 margin: 6px 2px;
@@ -362,11 +387,11 @@ class ConnectionCard(QWidget):
         
         layout.addWidget(self.info_frame)
         
-        # === BOUTONS D'ACTION ===
+        # === BOUTONS D'ACTION NORMAUX ===
         buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(6)
+        buttons_layout.setSpacing(8)
         
-        # Bouton configurer
+        # Bouton configurer - STYLE NORMAL
         self.config_btn = QPushButton("⚙️ Config")
         self.config_btn.setStyleSheet("""
             QPushButton {
@@ -383,7 +408,7 @@ class ConnectionCard(QWidget):
         self.config_btn.clicked.connect(lambda: self.configuration_requested.emit(self.service_name))
         buttons_layout.addWidget(self.config_btn)
         
-        # Bouton connexion/déconnexion
+        # Bouton connexion/déconnexion - STYLE NORMAL
         self.connection_btn = QPushButton("🔗 Connecter")
         self.connection_btn.setStyleSheet("""
             QPushButton {
@@ -403,30 +428,38 @@ class ConnectionCard(QWidget):
         layout.addLayout(buttons_layout)
         
         self.setLayout(layout)
-        self.setFixedWidth(320)  # Largeur adaptée
-        self.setMinimumHeight(150)  # Hauteur RÉDUITE pour optimiser l'espace
-        self.setMaximumHeight(165)  # Hauteur max RÉDUITE
+        self.setFixedWidth(340)  # Largeur légèrement augmentée pour les marges
+        self.setMinimumHeight(155)  # Hauteur optimisée
+        self.setMaximumHeight(170)  # Hauteur max
         
-        # Appliquer le style par défaut
-        self.apply_default_style()
+        # Appliquer le style avec fond subtil
+        self.apply_subtle_style()
     
-    def apply_default_style(self):
-        """Applique le style par défaut"""
-        self.setStyleSheet("""
-            ConnectionCard {
-                background-color: #3a3d42;
-                border: 2px solid #4a4d52;
-                border-radius: 12px;
-                margin: 8px;
-                padding: 4px;
-            }
-            ConnectionCard:hover {
-                border-color: #6c757d;
-                background-color: #42464b;
-                box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4);
-            }
-        """)
-    
+    def apply_subtle_style(self):
+            """Style avec couleurs TRÈS visibles"""
+            self.setStyleSheet(f"""
+                ConnectionCard {{
+                    background-color: {self.colors['background']} !important;
+                    border: 3px solid {self.colors['border']} !important;
+                    border-radius: 12px;
+                    margin: 5px;
+                    padding: 0px;
+                }}
+                ConnectionCard:hover {{
+                    background-color: {self.colors['hover_bg']} !important;
+                    border-color: {self.colors['hover_border']} !important;
+                    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.4);
+                }}
+            """)
+            
+            print(f"🔥 Style RENFORCÉ appliqué pour {self.service_type}")
+            print(f"   Fond: {self.colors['background']}")
+            print(f"   Bordure: {self.colors['border']}")
+            
+            # Forcer la mise à jour
+            self.setStyleSheet(self.styleSheet())
+            self.update()
+            self.repaint()
     def toggle_connection(self):
         """Basculer entre connexion/déconnexion"""
         if self.is_connected:
@@ -441,7 +474,7 @@ class ConnectionCard(QWidget):
         self.connection_btn.setEnabled(False)
     
     def set_connected(self, info=None):
-        """Marque comme connecté avec infos optionnelles"""
+        """Marque comme connecté avec bouton rouge de déconnexion"""
         self.is_connected = True
         self.connection_info = info or {}
         
@@ -469,7 +502,7 @@ class ConnectionCard(QWidget):
         self.update_connection_info()
     
     def set_disconnected(self, error_message=None):
-        """Marque comme déconnecté"""
+        """Marque comme déconnecté avec style normal"""
         self.is_connected = False
         self.connection_info = {}
         
@@ -549,7 +582,7 @@ class ConnectionCard(QWidget):
 
 
 class ConnectionManager(QWidget):
-    """Gestionnaire principal des connexions - VERSION FINALE DÉFINITIVE"""
+    """Gestionnaire principal des connexions - AVEC ESPACEMENT DES CARTES"""
     
     # Signaux pour communiquer avec MainWindow
     connection_status_changed = pyqtSignal(str, bool, dict)  # service, connected, info
@@ -566,22 +599,22 @@ class ConnectionManager(QWidget):
         self.setup_services()
     
     def init_ui(self):
-        """Interface principale - ESPACEMENT FINAL PARFAIT"""
+        """Interface principale - AVEC ESPACEMENT ENTRE CARTES"""
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 8, 10, 25)  # Marge bas MAXIMISÉE pour libérer l'espace
-        layout.setSpacing(8)  # Espacement optimal
+        layout.setContentsMargins(15, 10, 15, 20)  # Marges externes généreuses
+        layout.setSpacing(10)
         
-        # Titre compact
-        title = QLabel("🔗 Gestionnaire de Connexions")
+        # Titre compact SANS EMOJI
+        title = QLabel("Gestionnaire de Connexions")
         title.setStyleSheet("""
             font-size: 14px; 
             font-weight: bold; 
             color: #ffffff;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         """)
         layout.addWidget(title)
         
-        # Conteneur des cartes avec marges maximisées
+        # Conteneur des cartes avec espacement
         cards_container = QWidget()
         cards_container.setStyleSheet("""
             QWidget {
@@ -591,33 +624,17 @@ class ConnectionManager(QWidget):
         """)
         
         self.cards_layout = QHBoxLayout()
-        self.cards_layout.setContentsMargins(5, 10, 5, 18)  # Marge bas MAXIMISÉE
-        self.cards_layout.setSpacing(20)
+        self.cards_layout.setContentsMargins(10, 10, 10, 15)  # Marges pour cartes
+        self.cards_layout.setSpacing(25)  # ESPACEMENT ENTRE CARTES augmenté
         self.cards_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         cards_container.setLayout(self.cards_layout)
         
         layout.addWidget(cards_container)
         
-        # Barre d'actions avec séparation MAXIMALE
+        # Barre d'actions SIMPLIFIÉE
         actions_layout = QHBoxLayout()
         actions_layout.setSpacing(6)
-        actions_layout.setContentsMargins(0, 12, 0, 0)  # Marge haute AUGMENTÉE
-        
-        refresh_btn = QPushButton("🔄 Actualiser")
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #17a2b8;
-                color: white;
-                border: none;
-                padding: 4px 8px;
-                border-radius: 3px;
-                font-size: 10px;
-                font-weight: 600;
-            }
-            QPushButton:hover { background-color: #138496; }
-        """)
-        refresh_btn.clicked.connect(self.refresh_all_connections)
-        actions_layout.addWidget(refresh_btn)
+        actions_layout.setContentsMargins(0, 10, 0, 0)
         
         actions_layout.addStretch()
         
@@ -628,9 +645,23 @@ class ConnectionManager(QWidget):
         
         layout.addLayout(actions_layout)
         
+        # === SÉPARATEUR VISUEL ===
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setFrameShadow(QFrame.Shadow.Sunken)
+        separator.setStyleSheet("""
+            QFrame {
+                color: #4a4d52;
+                background-color: #4a4d52;
+                border: none;
+                margin: 12px 0px;
+            }
+        """)
+        layout.addWidget(separator)
+        
         self.setLayout(layout)
-        self.setMaximumHeight(250)  # Hauteur FINALE optimisée
-        self.setMinimumHeight(250)  # Hauteur minimale fixée
+        self.setMaximumHeight(290)  # Hauteur ajustée pour les nouvelles marges
+        self.setMinimumHeight(290)
     
     def setup_services(self):
         """Configure les services disponibles"""
@@ -730,16 +761,6 @@ class ConnectionManager(QWidget):
                 services_text = f"{connected_services[0]} et {count-1} autre(s)"
             self.global_status.setText(f"✅ {count} service(s) connecté(s): {services_text}")
             self.global_status.setStyleSheet("font-size: 11px; color: #28a745; font-weight: 600;")
-    
-    def refresh_all_connections(self):
-        """Actualise toutes les connexions actives"""
-        connected_services = self.get_connected_services()
-        if connected_services:
-            for service_name in connected_services:
-                self.connection_status_changed.emit(service_name, True, {'refresh': True})
-        else:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(self, "Actualisation", "Aucune connexion active à actualiser.")
 
 
 # Export
