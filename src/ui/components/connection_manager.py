@@ -604,8 +604,8 @@ class ConnectionManager(QWidget):
         layout.setContentsMargins(15, 10, 15, 20)  # Marges externes généreuses
         layout.setSpacing(10)
         
-        # Titre compact SANS EMOJI
-        title = QLabel("Gestionnaire de Connexions")
+        # Titre compact 
+        title = QLabel("Infrastructure Proxmox")
         title.setStyleSheet("""
             font-size: 14px; 
             font-weight: bold; 

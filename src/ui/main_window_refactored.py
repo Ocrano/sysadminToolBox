@@ -309,17 +309,6 @@ class MainWindowRefactored(QMainWindow):
         title_layout.setContentsMargins(15, 5, 15, 5)
         title_layout.setSpacing(0)
         
-        title_label = QLabel("🛠️ Outils Proxmox")
-        title_label.setStyleSheet("""
-            font-size: 13px; 
-            font-weight: bold; 
-            color: #ffffff;
-            padding: 0px;
-            margin: 0px;
-            background-color: transparent;
-        """)
-        title_layout.addWidget(title_label)
-        
         title_layout.addStretch()
         
         version_label = VersionLabel(self.VERSION, self.DEVELOPER)
@@ -364,19 +353,8 @@ class MainWindowRefactored(QMainWindow):
         layout = QVBoxLayout()
         layout.setContentsMargins(5, 0, 5, 5)
         layout.setSpacing(3)
-        
-        # Titre compact
-        title_label = QLabel("⚡ Actions disponibles")
-        title_label.setStyleSheet("""
-            font-size: 13px; 
-            font-weight: bold; 
-            color: #ffffff;
-            padding: 5px 0px;
-            margin: 0px;
-        """)
-        layout.addWidget(title_label)
-        
-        # === GRILLE D'ACTIONS AVEC BOUTONS ===
+    
+       # === GRILLE D'ACTIONS AVEC BOUTONS ===
         self.actions_grid = ActionGrid()
         
         # Groupe VM Management
@@ -387,12 +365,12 @@ class MainWindowRefactored(QMainWindow):
         self.qemu_btn.setEnabled(False)
         self.actions_grid.add_action_to_group("Gestion des VMs", self.qemu_btn)
         
-        self.list_vms_btn = ActionButton("Lister toutes les VMs", 'info', "📋")
+        self.list_vms_btn = ActionButton("Lister toutes les VMs", 'primary')
         self.list_vms_btn.clicked.connect(self.list_all_vms)
         self.list_vms_btn.setEnabled(False)
         self.actions_grid.add_action_to_group("Gestion des VMs", self.list_vms_btn)
         
-        self.scan_linux_btn = ActionButton("Scanner VMs Linux", 'orange', "🐧")
+        self.scan_linux_btn = ActionButton("Scanner VMs Linux", 'primary')
         self.scan_linux_btn.clicked.connect(self.scan_linux_vms)
         self.scan_linux_btn.setEnabled(False)
         self.actions_grid.add_action_to_group("Gestion des VMs", self.scan_linux_btn)
@@ -400,12 +378,12 @@ class MainWindowRefactored(QMainWindow):
         # Groupe Infrastructure
         infra_group = self.actions_grid.add_group("Infrastructure", "🏗️")
         
-        self.nodes_btn = ActionButton("Statut des nœuds", 'purple', "📊")
+        self.nodes_btn = ActionButton("Statut des nœuds", 'primary')
         self.nodes_btn.clicked.connect(self.show_nodes_status)
         self.nodes_btn.setEnabled(False)
         self.actions_grid.add_action_to_group("Infrastructure", self.nodes_btn)
         
-        self.storage_btn = ActionButton("Informations stockage", 'pink', "💾")
+        self.storage_btn = ActionButton("Informations stockage", 'primary')
         self.storage_btn.clicked.connect(self.show_storage_info)
         self.storage_btn.setEnabled(False)
         self.actions_grid.add_action_to_group("Infrastructure", self.storage_btn)

@@ -447,9 +447,6 @@ class ActionButton(QPushButton):
             'warning': '#ffc107',
             'danger': '#dc3545',
             'secondary': '#6c757d',
-            'purple': '#6f42c1',
-            'orange': '#fd7e14',
-            'pink': '#e83e8c'
         }
         
         base_color = colors.get(self.color, '#007bff')
@@ -461,8 +458,7 @@ class ActionButton(QPushButton):
                 border: none;
                 padding: 12px 10px;
                 border-radius: 4px;
-                font-weight: bold;
-                text-align: left;
+                text-align: center;
                 font-size: 12px;
                 min-height: 20px;
             }}
@@ -548,7 +544,7 @@ class ActionGrid(QWidget):
         group = QGroupBox(display_title)
         group_layout = QVBoxLayout()
         group_layout.setContentsMargins(8, 8, 8, 8)
-        group_layout.setSpacing(3)
+        group_layout.setSpacing(10)
         group.setLayout(group_layout)
         
         # Style avec titre BIEN POSITIONNÉ et PLUS D'ESPACE
@@ -560,19 +556,19 @@ class ActionGrid(QWidget):
                 border-radius: 4px;
                 margin-top: 15px;
                 margin-bottom: 10px;
-                padding-top: 20px;
+                padding-top: 10px;
                 background-color: transparent;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 10px;
-                top: -2px;
+                subcontrol-position: top center;
+                top: 10px;
                 padding: 0 6px 0 6px;
                 color: #ffffff;
                 font-size: 12px;
                 font-weight: bold;
                 background-color: #2b2b2b;
+                text-align: center;
             }
         """)
         
