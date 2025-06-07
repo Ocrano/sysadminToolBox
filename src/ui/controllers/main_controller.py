@@ -1,7 +1,7 @@
 # src/ui/controllers/main_controller.py
 """
 Contrôleur principal pour MainWindow
-Gère les interactions entre l'UI et les services
+Gère les interactions entre l'UI et les services - VERSION CORRIGÉE
 """
 
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -29,18 +29,19 @@ class MainController(QObject):
     scripts_loaded = pyqtSignal(list)  # script_list
     service_connection_changed = pyqtSignal(str, bool, dict)  # service, connected, info
     
-    def __init__(self, git_manager, script_runner, proxmox_handler):
+    def __init__(self, git_manager, script_runner, proxmox_service):
         super().__init__()
         
         # Services injectés
         self.git_manager = git_manager
         self.script_runner = script_runner
-        self.proxmox_handler = proxmox_handler
+        # CORRECTION : Utiliser directement le service unifié
+        self.proxmox_service = proxmox_service
         
         # État de connexion des services
         self.connected_services = {}
         
-        log_info("MainController initialisé", "Controller")
+        log_info("MainController initialisé avec service Proxmox unifié", "Controller")
     
     # === GESTION PROXMOX ===
     
@@ -49,43 +50,31 @@ class MainController(QObject):
         try:
             log_info("Configuration Proxmox en cours...", "Controller")
             
-            # CORRECTION: Utiliser les bonnes clés du dialog
-            success = self.proxmox_handler.configure_connection(
-                host=config['ip'],        # ← 'ip' au lieu de 'host'
-                port=config['port'],
-                username=config['user'],  # ← 'user' au lieu de 'username'
-                password=config['password'],
-                verify_ssl=config.get('verify_ssl', False)
-            )
+            # CORRECTION : Utiliser la méthode connect du service unifié
+            success = self.proxmox_service.connect(config)
             
             if success:
-                # Tester la connexion
-                test_result = self.proxmox_handler.test_connection()
-                if test_result:
-                    log_success("Connexion Proxmox établie", "Controller")
-                    
-                    # Récupérer les informations
-                    info = self.get_proxmox_info()
-                    
-                    # Marquer comme connecté
-                    self.connected_services['Proxmox VE'] = {
-                        'connected': True,
-                        'info': info,
-                        'last_update': time.time()
-                    }
-                    
-                    # Émettre les signaux
-                    self.proxmox_connection_changed.emit(True)
-                    self.proxmox_info_updated.emit(info)
-                    self.service_connection_changed.emit('Proxmox VE', True, info)
-                    
-                    return True, "Connexion Proxmox réussie"
-                else:
-                    log_error("Échec du test de connexion Proxmox", "Controller")
-                    return False, "Impossible de se connecter à Proxmox. Vérifiez les paramètres."
+                log_success("Connexion Proxmox établie", "Controller")
+                
+                # Récupérer les informations
+                info = self.get_proxmox_info()
+                
+                # Marquer comme connecté
+                self.connected_services['Proxmox VE'] = {
+                    'connected': True,
+                    'info': info,
+                    'last_update': time.time()
+                }
+                
+                # Émettre les signaux
+                self.proxmox_connection_changed.emit(True)
+                self.proxmox_info_updated.emit(info)
+                self.service_connection_changed.emit('Proxmox VE', True, info)
+                
+                return True, "Connexion Proxmox réussie"
             else:
-                log_error("Échec de la configuration Proxmox", "Controller")
-                return False, "Configuration Proxmox échouée"
+                log_error("Échec du test de connexion Proxmox", "Controller")
+                return False, "Impossible de se connecter à Proxmox. Vérifiez les paramètres."
                 
         except Exception as e:
             log_error(f"Erreur configuration Proxmox: {e}", "Controller")
@@ -94,6 +83,9 @@ class MainController(QObject):
     def disconnect_proxmox(self):
         """Déconnecte Proxmox"""
         try:
+            # CORRECTION : Utiliser la méthode disconnect du service unifié
+            self.proxmox_service.disconnect()
+            
             # Marquer comme déconnecté
             if 'Proxmox VE' in self.connected_services:
                 del self.connected_services['Proxmox VE']
@@ -112,61 +104,27 @@ class MainController(QObject):
     def get_proxmox_info(self):
         """Récupère les informations Proxmox"""
         try:
-            if not self.proxmox_handler.is_connected():
+            if not self.proxmox_service.is_connected():
                 return {}
             
-            # Récupérer les informations du cluster
-            cluster_info = self.proxmox_handler.get_cluster_status()
-            nodes_info = self.proxmox_handler.get_nodes()
-            vms_info = self.proxmox_handler.list_vms()
+            # CORRECTION : Utiliser les méthodes du service unifié
+            nodes_info = self.proxmox_service.get_node_status()
+            vms_info = self.proxmox_service.list_vms()
             
             # Calculer les statistiques
             nodes_count = len(nodes_info) if nodes_info else 0
             total_vms = len(vms_info) if vms_info else 0
             running_vms = len([vm for vm in vms_info if vm.get('status') == 'running']) if vms_info else 0
             
-            # Version Proxmox (essayer de la récupérer de manière sécurisée)
-            version = "N/A"
-            try:
-                if nodes_info and len(nodes_info) > 0:
-                    first_node = nodes_info[0]
-                    # Vérifier que first_node est bien un dictionnaire
-                    if isinstance(first_node, dict):
-                        version = first_node.get('version', 'N/A')
-                    else:
-                        log_debug(f"Type inattendu pour first_node: {type(first_node)}", "Controller")
-                
-                # Alternative: essayer de récupérer la version via connection_info
-                if version == "N/A" and self.proxmox_handler.is_connected():
-                    connection_info = self.proxmox_handler.get_connection_info()
-                    if isinstance(connection_info, dict):
-                        version = connection_info.get('version', 'N/A')
-                        
-            except Exception as version_error:
-                log_warning(f"Impossible de récupérer la version: {version_error}", "Controller")
-                version = "N/A"
-            
-            # Nom du cluster (gestion sécurisée)
-            cluster_name = "Default"
-            try:
-                if cluster_info:
-                    if isinstance(cluster_info, dict):
-                        cluster_name = cluster_info.get('name', 'Default')
-                    elif isinstance(cluster_info, list) and len(cluster_info) > 0:
-                        # Si cluster_info est une liste, prendre le premier élément
-                        first_cluster = cluster_info[0]
-                        if isinstance(first_cluster, dict):
-                            cluster_name = first_cluster.get('name', 'Default')
-            except Exception as cluster_error:
-                log_warning(f"Impossible de récupérer le nom du cluster: {cluster_error}", "Controller")
-                cluster_name = "Default"
+            # Version Proxmox
+            version = self.proxmox_service.get_version()
             
             info = {
                 'nodes_count': nodes_count,
                 'total_vms': total_vms,
                 'running_vms': running_vms,
                 'version': version,
-                'cluster_name': cluster_name,
+                'cluster_name': 'Default',  # Simplifié pour l'instant
                 'last_update': time.strftime("%H:%M:%S")
             }
             
@@ -198,7 +156,7 @@ class MainController(QObject):
         """Vérifie si Proxmox est connecté"""
         return ('Proxmox VE' in self.connected_services and 
                 self.connected_services['Proxmox VE'].get('connected', False) and
-                self.proxmox_handler.is_connected())
+                self.proxmox_service.is_connected())
     
     # === GESTION DES SERVICES GÉNÉRIQUES ===
     
@@ -208,18 +166,10 @@ class MainController(QObject):
         
         if service_name == "Proxmox VE":
             if connect:
-                # Si déjà configuré, se reconnecter
-                if hasattr(self.proxmox_handler, '_last_config') and self.proxmox_handler._last_config:
-                    config = self.proxmox_handler._last_config
-                    # CORRECTION: Adapter les clés pour le reconnexion automatique
-                    normalized_config = {
-                        'ip': config.get('host', config.get('ip', '')),
-                        'port': config.get('port', 8006),
-                        'user': config.get('username', config.get('user', '')),
-                        'password': config.get('password', ''),
-                        'verify_ssl': config.get('verify_ssl', False)
-                    }
-                    return self.configure_proxmox(normalized_config)
+                # CORRECTION : Gestion simplifiée avec le service unifié
+                if self.proxmox_service.is_connected():
+                    # Déjà connecté, actualiser les infos
+                    return self.refresh_proxmox_info(), "Connexion actualisée"
                 else:
                     # Pas encore configuré, demander la configuration
                     self.service_connection_changed.emit(service_name, False, {'needs_config': True})
@@ -229,12 +179,10 @@ class MainController(QObject):
         
         elif service_name == "VMware vSphere":
             if connect:
-                # TODO: Implémenter la connexion vSphere
                 log_warning("Connexion vSphere pas encore implémentée", "Controller")
                 self.service_connection_changed.emit(service_name, False, {'error': 'Non implémenté'})
                 return False, "vSphere pas encore supporté"
             else:
-                # TODO: Déconnexion vSphere
                 return True, "vSphere déconnecté"
         
         else:
@@ -255,7 +203,6 @@ class MainController(QObject):
             if service_name == "Proxmox VE":
                 if self.refresh_proxmox_info():
                     refreshed_count += 1
-            # TODO: Ajouter d'autres services
         
         log_info(f"{refreshed_count} service(s) actualisé(s)", "Controller")
         return refreshed_count
@@ -265,7 +212,7 @@ class MainController(QObject):
     def configure_gitlab_token(self, token):
         """Configure le token GitLab"""
         try:
-            success = self.git_manager.configure_token(token)  # Méthode probable du GitLabManager
+            success = self.git_manager.configure_token(token)
             if success:
                 log_success("Token GitLab configuré", "Controller")
                 return True, "Token GitLab enregistré avec succès"
@@ -281,7 +228,7 @@ class MainController(QObject):
         """Charge les scripts depuis GitLab"""
         try:
             log_info("Chargement des scripts depuis GitLab...", "Controller")
-            scripts = self.git_manager.list_scripts()  # Méthode probable du GitLabManager
+            scripts = self.git_manager.list_scripts()
             
             if scripts:
                 log_success(f"{len(scripts)} script(s) récupéré(s)", "Controller")
@@ -327,7 +274,7 @@ class MainController(QObject):
         try:
             log_info(f"Exécution du script: {script_name}", "Controller")
             
-            result = self.script_runner.execute_script(script_name)  # Méthode probable du ScriptRunner
+            result = self.script_runner.execute_script(script_name)
             
             if result.get('success', False):
                 log_success(f"Script {script_name} exécuté avec succès", "Controller")
@@ -347,7 +294,6 @@ class MainController(QObject):
         try:
             log_info(f"Import du plan IP: {file_path}", "Controller")
             
-            # Utiliser l'importeur IP
             from ...utils.ip_plan_importer import IPPlanImporter
             importer = IPPlanImporter()
             
@@ -372,7 +318,6 @@ class MainController(QObject):
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"toolbox_logs_{export_type}_{timestamp}.log"
             
-            # En-tête du fichier
             header = f"""# Toolbox PyQt6 - Export des logs
 # Type: {export_type}
 # Date: {time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -389,12 +334,12 @@ class MainController(QObject):
             log_error(f"Erreur préparation export logs: {e}", "Controller")
             return False, "", ""
     
-    # === PROPRIÉTÉS PUBLIQUES ===
+    # === PROPRIÉTÉS PUBLIQUES - CORRECTION ===
     
     @property
-    def proxmox_service(self):
-        """Accès au service Proxmox pour compatibilité"""
-        return self.proxmox_handler
+    def proxmox_handler(self):
+        """Alias pour compatibilité - renvoie le service unifié"""
+        return self.proxmox_service
     
     def get_connected_services_list(self):
         """Retourne la liste des services connectés"""

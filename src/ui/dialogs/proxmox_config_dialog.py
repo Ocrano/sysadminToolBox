@@ -8,7 +8,9 @@ from PyQt6.QtWidgets import (
     QComboBox, QSpinBox, QGroupBox, QTextEdit
 )
 from PyQt6.QtGui import QPixmap, QPalette
-from ...services.proxmox_service import ProxmoxService  # Import du service refactorisé
+
+# CORRECTION : Import du service unifié
+from ...services.proxmox_service import ProxmoxService
 
 class ConnectionTestThread(QThread):
     """Thread pour tester la connexion Proxmox en arrière-plan"""

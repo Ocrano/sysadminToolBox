@@ -2,6 +2,7 @@
 """
 Service Proxmox divisé en modules spécialisés
 Sépare les responsabilités: connexion, VMs, infrastructure, QEMU Agent
+VERSION CORRIGÉE COMPLÈTE avec toutes les méthodes manquantes
 """
 
 from ..core.logger import log_debug, log_info, log_error, log_success, log_ssh, log_proxmox, log_vm
@@ -354,6 +355,195 @@ class ProxmoxQemuAgentService:
         except:
             pass
         return "IP non disponible"
+    
+    # === NOUVELLES MÉTHODES POUR L'INSTALLATION QEMU AGENT ===
+    
+    def install_qemu_agent_package_only(self, vm_info, ssh_credentials):
+        """Installe uniquement le package qemu-guest-agent via SSH"""
+        vm_name = vm_info.get('name', 'VM inconnue')
+        ip = ssh_credentials['ip']
+        username = ssh_credentials['username']
+        password = ssh_credentials['password']
+        
+        try:
+            import paramiko
+            
+            log_info(f"Connexion SSH à {username}@{ip} pour {vm_name}", "QemuAgent")
+            
+            # Connexion SSH
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(ip, username=username, password=password, timeout=30)
+            
+            # Détecter la distribution
+            stdin, stdout, stderr = ssh.exec_command('cat /etc/os-release')
+            os_release = stdout.read().decode()
+            
+            log_debug(f"Distribution détectée pour {vm_name}: {os_release[:100]}...", "QemuAgent")
+            
+            # Commandes d'installation selon la distribution
+            if 'ubuntu' in os_release.lower() or 'debian' in os_release.lower():
+                commands = [
+                    'sudo apt-get update',
+                    'sudo apt-get install -y qemu-guest-agent'
+                ]
+                log_info(f"Installation via APT pour {vm_name}", "QemuAgent")
+            elif 'centos' in os_release.lower() or 'rhel' in os_release.lower() or 'rocky' in os_release.lower():
+                commands = [
+                    'sudo yum install -y qemu-guest-agent'
+                ]
+                log_info(f"Installation via YUM pour {vm_name}", "QemuAgent")
+            elif 'fedora' in os_release.lower():
+                commands = [
+                    'sudo dnf install -y qemu-guest-agent'
+                ]
+                log_info(f"Installation via DNF pour {vm_name}", "QemuAgent")
+            else:
+                ssh.close()
+                log_error(f"Distribution non supportée pour {vm_name}: {os_release[:50]}", "QemuAgent")
+                return False, f"Distribution non supportée pour {vm_name}"
+            
+            # Exécuter les commandes
+            for cmd in commands:
+                log_debug(f"Exécution: {cmd} sur {vm_name}", "QemuAgent")
+                stdin, stdout, stderr = ssh.exec_command(cmd)
+                exit_status = stdout.channel.recv_exit_status()
+                
+                if exit_status != 0:
+                    error = stderr.read().decode()
+                    ssh.close()
+                    log_error(f"Échec commande '{cmd}' sur {vm_name}: {error}", "QemuAgent")
+                    return False, f"Erreur installation package: {error}"
+                else:
+                    output = stdout.read().decode()
+                    log_debug(f"Commande réussie sur {vm_name}: {output[:200]}...", "QemuAgent")
+            
+            ssh.close()
+            log_success(f"Package qemu-guest-agent installé sur {vm_name}", "QemuAgent")
+            return True, f"Package installé sur {vm_name}"
+            
+        except Exception as e:
+            log_error(f"Erreur SSH {vm_name}: {str(e)}", "QemuAgent")
+            return False, f"Erreur SSH {vm_name}: {str(e)}"
+    
+    def start_qemu_agent_service(self, vm_info, ssh_credentials):
+        """Démarre le service qemu-guest-agent via SSH"""
+        vm_name = vm_info.get('name', 'VM inconnue')
+        ip = ssh_credentials['ip']
+        username = ssh_credentials['username']
+        password = ssh_credentials['password']
+        
+        try:
+            import paramiko
+            
+            log_info(f"Démarrage du service QEMU Agent sur {vm_name}", "QemuAgent")
+            
+            # Connexion SSH
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(ip, username=username, password=password, timeout=30)
+            
+            # Commandes pour démarrer et activer le service
+            commands = [
+                'sudo systemctl enable qemu-guest-agent',
+                'sudo systemctl start qemu-guest-agent',
+                'sudo systemctl status qemu-guest-agent --no-pager'
+            ]
+            
+            # Exécuter les commandes
+            for i, cmd in enumerate(commands):
+                log_debug(f"Exécution: {cmd} sur {vm_name}", "QemuAgent")
+                stdin, stdout, stderr = ssh.exec_command(cmd)
+                exit_status = stdout.channel.recv_exit_status()
+                
+                # Pour les deux premières commandes, l'exit status doit être 0
+                if i < 2 and exit_status != 0:
+                    error = stderr.read().decode()
+                    ssh.close()
+                    log_error(f"Échec commande '{cmd}' sur {vm_name}: {error}", "QemuAgent")
+                    return False, f"Erreur service: {error}"
+                else:
+                    output = stdout.read().decode()
+                    log_debug(f"Sortie commande sur {vm_name}: {output[:200]}...", "QemuAgent")
+            
+            ssh.close()
+            log_success(f"Service qemu-guest-agent démarré sur {vm_name}", "QemuAgent")
+            return True, f"Service démarré sur {vm_name}"
+            
+        except Exception as e:
+            log_error(f"Erreur SSH service {vm_name}: {str(e)}", "QemuAgent")
+            return False, f"Erreur SSH service {vm_name}: {str(e)}"
+    
+    def shutdown_vm_robust(self, node_name, vmid, vm_name):
+        """Arrêt robuste d'une VM avec fallback"""
+        try:
+            log_info(f"Arrêt robuste de {vm_name} (ID: {vmid})", "QemuAgent")
+            
+            # Tentative d'arrêt gracieux
+            self.connection.proxmox.nodes(node_name).qemu(vmid).status.shutdown.post()
+            log_debug(f"Commande shutdown envoyée à {vm_name}", "QemuAgent")
+            
+            # Attendre l'arrêt (max 60 secondes)
+            import time
+            for i in range(12):  # 12 * 5 = 60 secondes
+                time.sleep(5)
+                status = self.connection.proxmox.nodes(node_name).qemu(vmid).status.current.get()
+                current_status = status.get('status')
+                log_debug(f"Statut {vm_name} après {(i+1)*5}s: {current_status}", "QemuAgent")
+                
+                if current_status == 'stopped':
+                    log_success(f"Arrêt gracieux de {vm_name} réussi", "QemuAgent")
+                    return True, f"Arrêt gracieux de {vm_name} réussi"
+            
+            # Si toujours en marche, arrêt forcé
+            log_warning(f"Timeout arrêt gracieux pour {vm_name}, passage en arrêt forcé", "QemuAgent")
+            self.connection.proxmox.nodes(node_name).qemu(vmid).status.stop.post()
+            
+            # Attendre l'arrêt forcé (max 30 secondes)
+            for i in range(6):  # 6 * 5 = 30 secondes
+                time.sleep(5)
+                status = self.connection.proxmox.nodes(node_name).qemu(vmid).status.current.get()
+                current_status = status.get('status')
+                log_debug(f"Statut {vm_name} (forcé) après {(i+1)*5}s: {current_status}", "QemuAgent")
+                
+                if current_status == 'stopped':
+                    log_success(f"Arrêt forcé de {vm_name} réussi", "QemuAgent")
+                    return True, f"Arrêt forcé de {vm_name} réussi"
+            
+            log_error(f"Impossible d'arrêter {vm_name} même en mode forcé", "QemuAgent")
+            return False, f"Impossible d'arrêter {vm_name}"
+            
+        except Exception as e:
+            log_error(f"Erreur arrêt {vm_name}: {str(e)}", "QemuAgent")
+            return False, f"Erreur arrêt {vm_name}: {str(e)}"
+    
+    def start_vm_robust(self, node_name, vmid, vm_name):
+        """Démarrage robuste d'une VM"""
+        try:
+            log_info(f"Démarrage robuste de {vm_name} (ID: {vmid})", "QemuAgent")
+            
+            # Démarrer la VM
+            self.connection.proxmox.nodes(node_name).qemu(vmid).status.start.post()
+            log_debug(f"Commande start envoyée à {vm_name}", "QemuAgent")
+            
+            # Attendre le démarrage (max 120 secondes)
+            import time
+            for i in range(24):  # 24 * 5 = 120 secondes
+                time.sleep(5)
+                status = self.connection.proxmox.nodes(node_name).qemu(vmid).status.current.get()
+                current_status = status.get('status')
+                log_debug(f"Statut {vm_name} après {(i+1)*5}s: {current_status}", "QemuAgent")
+                
+                if current_status == 'running':
+                    log_success(f"Démarrage de {vm_name} réussi", "QemuAgent")
+                    return True, f"Démarrage de {vm_name} réussi"
+            
+            log_error(f"Timeout démarrage {vm_name} (120s)", "QemuAgent")
+            return False, f"Timeout démarrage {vm_name}"
+            
+        except Exception as e:
+            log_error(f"Erreur démarrage {vm_name}: {str(e)}", "QemuAgent")
+            return False, f"Erreur démarrage {vm_name}: {str(e)}"
 
 
 # Classe principale orchestrant tous les services
@@ -409,3 +599,21 @@ class ProxmoxService:
     
     def enable_qemu_agent_in_config(self, node_name, vmid):
         return self.qemu_agent.enable_agent_in_config(node_name, vmid)
+    
+    # === NOUVELLES DÉLÉGATIONS POUR L'INSTALLATION QEMU AGENT ===
+    
+    def install_qemu_agent_package_only(self, vm_info, ssh_credentials):
+        """Délégation vers le service QEMU Agent"""
+        return self.qemu_agent.install_qemu_agent_package_only(vm_info, ssh_credentials)
+    
+    def start_qemu_agent_service(self, vm_info, ssh_credentials):
+        """Délégation vers le service QEMU Agent"""
+        return self.qemu_agent.start_qemu_agent_service(vm_info, ssh_credentials)
+    
+    def shutdown_vm_robust(self, node_name, vmid, vm_name):
+        """Délégation vers le service QEMU Agent"""
+        return self.qemu_agent.shutdown_vm_robust(node_name, vmid, vm_name)
+    
+    def start_vm_robust(self, node_name, vmid, vm_name):
+        """Délégation vers le service QEMU Agent"""
+        return self.qemu_agent.start_vm_robust(node_name, vmid, vm_name)

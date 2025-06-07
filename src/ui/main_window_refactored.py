@@ -1,6 +1,6 @@
 # src/ui/main_window_refactored.py
 """
-MainWindow refactorisée - Layout propre avec Connection Manager
+MainWindow refactorisée - Layout propre avec Connection Manager - VERSION CORRIGÉE COMPLÈTE
 """
 
 import os
@@ -36,7 +36,7 @@ class MainWindowRefactored(QMainWindow):
     def __init__(self, git_manager, script_runner, proxmox_service):
         super().__init__()
         
-        # Initialiser le contrôleur
+        # Initialiser le contrôleur avec le service unifié
         self.controller = MainController(git_manager, script_runner, proxmox_service)
         self.importer = IPPlanImporter()
         
@@ -56,7 +56,7 @@ class MainWindowRefactored(QMainWindow):
     def init_ui(self):
         """Interface utilisateur finale"""
         self.setWindowTitle("Toolbox PyQt6 - Connection Manager")
-        self.setGeometry(200, 200, 1400, 900)  # Plus large pour le nouveau design
+        self.setGeometry(200, 200, 1400, 900)
         self.setMinimumSize(1200, 700)
         
         # Onglets principaux SANS marges
@@ -78,10 +78,10 @@ class MainWindowRefactored(QMainWindow):
         self.setCentralWidget(self.tabs)
         
         # Créer les onglets dans le nouvel ordre
-        self.create_dashboard_tab()  # NOUVEAU - En premier
+        self.create_dashboard_tab()
         self.create_scripts_tab()
         self.create_settings_tab()
-        self.create_tools_tab()      # MODIFIÉ - Plus compact
+        self.create_tools_tab()
         self.create_import_tab()
         
         # Ajouter les onglets externes (Network, Scanner)
@@ -98,7 +98,7 @@ class MainWindowRefactored(QMainWindow):
         
         # === CONNECTION MANAGER COMPACT ===
         self.connection_manager = ConnectionManager()
-        self.connection_manager.setMaximumHeight(200)  # Hauteur maximale limitée
+        self.connection_manager.setMaximumHeight(200)
         
         # Connecter les signaux du Connection Manager
         self.connection_manager.connection_status_changed.connect(self.handle_connection_manager_request)
@@ -109,30 +109,30 @@ class MainWindowRefactored(QMainWindow):
         # === SÉPARATEUR ===
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("color: #555; margin: 0px;")  # Plus de margin
+        separator.setStyleSheet("color: #555; margin: 0px;")
         layout.addWidget(separator)
         
-        # === VUE D'ENSEMBLE DES SERVICES (PLUS GRANDE) ===
+        # === VUE D'ENSEMBLE DES SERVICES ===
         overview_widget = self.create_services_overview()
-        layout.addWidget(overview_widget, 1)  # Prend tout l'espace restant
+        layout.addWidget(overview_widget, 1)
         
         tab.setLayout(layout)
         self.tabs.addTab(tab, "🏠 Dashboard")
 
     def create_services_overview(self):
-        """Vue d'ensemble des services - SANS ESPACES"""
+        """Vue d'ensemble des services - CORRECTION COMPLÈTE"""
         widget = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)  # AUCUNE MARGE
-        layout.setSpacing(0)  # AUCUN ESPACEMENT
+        layout = QVBoxLayout()  # CORRECTION: Variable cohérente
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
         # === TITRE ULTRA-COMPACT ===
         title_container = QWidget()
-        title_container.setFixedHeight(25)  # Hauteur fixe minimale
+        title_container.setFixedHeight(25)
         title_container.setStyleSheet("background-color: transparent; margin: 0px; padding: 0px;")
         
         title_layout = QHBoxLayout()
-        title_layout.setContentsMargins(15, 5, 15, 5)  # Marges minimales
+        title_layout.setContentsMargins(15, 5, 15, 5)
         title_layout.setSpacing(0)
         
         title_label = QLabel("Vue d'ensemble des services")
@@ -152,7 +152,7 @@ class MainWindowRefactored(QMainWindow):
         title_layout.addWidget(version_label)
         
         title_container.setLayout(title_layout)
-        layout.addWidget(title_container)
+        layout.addWidget(title_container)  # CORRECTION: Utilise 'layout'
         
         # === CONTENU PRINCIPAL ===
         content_widget = QWidget()
@@ -230,9 +230,9 @@ class MainWindowRefactored(QMainWindow):
         content_layout.addWidget(main_splitter)
         content_widget.setLayout(content_layout)
         
-        layout.addWidget(content_widget)
+        layout.addWidget(content_widget)  # CORRECTION: Utilise 'layout'
         
-        widget.setLayout(layout)
+        widget.setLayout(layout)  # CORRECTION: Utilise 'layout'
         return widget
 
     def create_scripts_tab(self):
@@ -297,16 +297,16 @@ class MainWindowRefactored(QMainWindow):
         """Onglet Tools - VERSION SIMPLIFIÉE SANS ESPACES"""
         tab = QWidget()
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)  # AUCUNE MARGE
-        main_layout.setSpacing(0)  # AUCUN ESPACEMENT
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
         # === TITRE ULTRA-COMPACT ===
         title_container = QWidget()
-        title_container.setFixedHeight(25)  # Hauteur fixe minimale
+        title_container.setFixedHeight(25)
         title_container.setStyleSheet("background-color: transparent; margin: 0px; padding: 0px;")
         
         title_layout = QHBoxLayout()
-        title_layout.setContentsMargins(15, 5, 15, 5)  # Marges minimales
+        title_layout.setContentsMargins(15, 5, 15, 5)
         title_layout.setSpacing(0)
         
         title_label = QLabel("🛠️ Outils Proxmox")
@@ -362,8 +362,8 @@ class MainWindowRefactored(QMainWindow):
         """Section des actions Proxmox - COMPACTE"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(5, 0, 5, 5)  # Marges réduites
-        layout.setSpacing(3)  # Espacement minimal
+        layout.setContentsMargins(5, 0, 5, 5)
+        layout.setSpacing(3)
         
         # Titre compact
         title_label = QLabel("⚡ Actions disponibles")
@@ -420,8 +420,8 @@ class MainWindowRefactored(QMainWindow):
         """Section des logs avec contrôles - COMPACTE"""
         widget = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(5, 0, 5, 5)  # Marges réduites
-        layout.setSpacing(3)  # Espacement minimal
+        layout.setContentsMargins(5, 0, 5, 5)
+        layout.setSpacing(3)
         
         # En-tête avec contrôles
         header_layout = QHBoxLayout()
@@ -544,13 +544,8 @@ class MainWindowRefactored(QMainWindow):
         """Connecte un service via le contrôleur"""
         if service_name == "Proxmox VE":
             # Vérifier si déjà configuré
-            if hasattr(self.controller.proxmox_handler, '_last_config'):
-                # Reconnexion automatique
-                success, message = self.controller.handle_service_connection_request(service_name, True)
-                if not success and "Configuration requise" in message:
-                    self.configure_proxmox()
-            else:
-                # Première configuration
+            success, message = self.controller.handle_service_connection_request(service_name, True)
+            if not success and "Configuration requise" in message:
                 self.configure_proxmox()
         else:
             # Autres services (à implémenter)
@@ -659,6 +654,8 @@ class MainWindowRefactored(QMainWindow):
         except Exception as e:
             print(f"Erreur filtre logs dashboard {level}: {e}")
 
+    # CORRECTION : Fin de la méthode update_global_metrics et reste du fichier
+
     def update_global_metrics(self):
         """Met à jour les métriques globales du dashboard"""
         try:
@@ -686,7 +683,8 @@ class MainWindowRefactored(QMainWindow):
     
     def configure_proxmox(self):
         """Configure Proxmox via le dialog"""
-        dialog = ProxmoxConfigDialog(self)
+        # CORRECTION : Passer le service unifié au dialogue
+        dialog = ProxmoxConfigDialog(self, self.controller.proxmox_service)
         if dialog.exec():
             config = dialog.get_config()
             
@@ -696,7 +694,6 @@ class MainWindowRefactored(QMainWindow):
             success, message = self.controller.configure_proxmox(config)
             if success:
                 QMessageBox.information(self, "Connexion réussie", message)
-                # Le signal service_connection_changed se chargera du reste
             else:
                 QMessageBox.critical(self, "Échec", message)
                 self.connection_manager.set_service_disconnected("Proxmox VE", message)
